@@ -8,9 +8,20 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Get all features
+// Get all features (with optional category filter)
 app.get('/api/features', (req, res) => {
-  db.all('SELECT * FROM features ORDER BY votes DESC', [], (err, rows) => {
+  const { category } = req.query;
+  let sql = 'SELECT * FROM features';
+  let params = [];
+
+  if (category && category !== 'all') {
+    sql += ' WHERE category = ?';
+    params.push(category);
+  }
+
+  sql += ' ORDER BY votes DESC';
+
+  db.all(sql, params, (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
       return;
@@ -21,23 +32,30 @@ app.get('/api/features', (req, res) => {
 
 // Create a new feature
 app.post('/api/features', (req, res) => {
-  const { title, description } = req.body;
+  const { title, description, category } = req.body;
   if (!title) {
     res.status(400).json({ error: 'Title is required' });
     return;
   }
 
-  const sql = 'INSERT INTO features (title, description) VALUES (?, ?)';
-  const params = [title, description || ''];
+  const sql = 'INSERT INTO features (title, description, category) VALUES (?, ?, ?)';
+  const params = [title, description || '', category || 'feature'];
 
   db.run(sql, params, function (err) {
     if (err) {
       res.status(400).json({ error: err.message });
       return;
     }
-    res.json({
-      message: 'Feature created',
-      data: { id: this.lastID, title, description, votes: 0, status: 'under_review' }
+    // Fetch the created feature to return full object
+    db.get('SELECT * FROM features WHERE id = ?', [this.lastID], (err, row) => {
+         if (err) {
+             res.json({
+                 message: 'Feature created',
+                 data: { id: this.lastID, title, description, category: category || 'feature', votes: 0, status: 'under_review' }
+             });
+             return;
+         }
+         res.json({ message: 'Feature created', data: row });
     });
   });
 });
@@ -85,6 +103,48 @@ app.patch('/api/features/:id/status', (req, res) => {
   });
 });
 
+// --- Comments API ---
+
+// Get comments for a feature
+app.get('/api/features/:id/comments', (req, res) => {
+    const { id } = req.params;
+    const sql = 'SELECT * FROM comments WHERE feature_id = ? ORDER BY created_at ASC';
+
+    db.all(sql, [id], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({ data: rows });
+    });
+});
+
+// Post a comment
+app.post('/api/features/:id/comments', (req, res) => {
+    const { id } = req.params;
+    const { content } = req.body;
+
+    if (!content) {
+        res.status(400).json({ error: 'Content is required' });
+        return;
+    }
+
+    const sql = 'INSERT INTO comments (feature_id, content) VALUES (?, ?)';
+    db.run(sql, [id, content], function(err) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+
+        db.get('SELECT * FROM comments WHERE id = ?', [this.lastID], (err, row) => {
+            if (err) {
+                 res.json({ message: 'Comment added', data: { id: this.lastID, feature_id: id, content } });
+                 return;
+            }
+            res.json({ message: 'Comment added', data: row });
+        })
+    });
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
