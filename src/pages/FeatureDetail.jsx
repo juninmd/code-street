@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronUp, ArrowLeft, MessageSquare, Send } from 'lucide-react';
+import { ChevronUp, ArrowLeft, MessageSquare, Send, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 
 const FeatureDetail = () => {
@@ -10,6 +10,8 @@ const FeatureDetail = () => {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
+  const [pledgeAmount, setPledgeAmount] = useState('');
+  const [isPledging, setIsPledging] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false); // Simple client-side toggle for demo
 
   useEffect(() => {
@@ -83,6 +85,28 @@ const FeatureDetail = () => {
       }
   }
 
+  const handlePledge = async (e) => {
+      e.preventDefault();
+      if (!pledgeAmount || isNaN(pledgeAmount) || pledgeAmount <= 0) return;
+
+      setIsPledging(true);
+      try {
+          const res = await fetch(`/api/features/${id}/pledge`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ amount: parseFloat(pledgeAmount) })
+          });
+          if (res.ok) {
+              setFeature(prev => ({ ...prev, pledged_amount: (prev.pledged_amount || 0) + parseFloat(pledgeAmount) }));
+              setPledgeAmount('');
+          }
+      } catch (err) {
+          console.error(err);
+      } finally {
+          setIsPledging(false);
+      }
+  };
+
   if (loading) return <div className="text-center py-12">Loading...</div>;
   if (!feature) return <div className="text-center py-12">Feature not found.</div>;
 
@@ -115,6 +139,36 @@ const FeatureDetail = () => {
                         </span>
                       </div>
                       <p className="text-gray-600 text-lg leading-relaxed">{feature.description}</p>
+
+                      {/* Pledge Section */}
+                      <div className="mt-6 p-5 bg-green-50 border border-green-100 rounded-xl">
+                          <h3 className="text-green-900 font-bold flex items-center mb-2">
+                              <DollarSign className="w-5 h-5 mr-1" />
+                              Total Pledged: <span className="text-2xl ml-2">${(feature.pledged_amount || 0).toLocaleString()}</span>
+                          </h3>
+                          <p className="text-green-700 text-sm mb-4">Back this feature to help prioritize development.</p>
+                          <form onSubmit={handlePledge} className="flex gap-3">
+                              <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
+                                  <input
+                                      type="number"
+                                      min="1"
+                                      step="1"
+                                      value={pledgeAmount}
+                                      onChange={(e) => setPledgeAmount(e.target.value)}
+                                      placeholder="Amount"
+                                      className="pl-7 pr-4 py-2 border border-green-200 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 w-32 outline-none"
+                                  />
+                              </div>
+                              <button
+                                  type="submit"
+                                  disabled={isPledging || !pledgeAmount}
+                                  className="px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors shadow-sm"
+                              >
+                                  {isPledging ? 'Pledging...' : 'Pledge Funds'}
+                              </button>
+                          </form>
+                      </div>
 
                       <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between">
                           <div className="text-sm text-gray-400">

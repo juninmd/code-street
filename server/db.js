@@ -27,6 +27,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 console.error('Error creating features table', err.message);
             } else {
                 console.log('Features table ready.');
+                // Add pledged_amount column if it doesn't exist
+                db.run('ALTER TABLE features ADD COLUMN pledged_amount REAL DEFAULT 0', (err) => {
+                    if (err && !err.message.includes('duplicate column')) {
+                        console.error('Error adding pledged_amount column', err.message);
+                    } else {
+                        console.log('pledged_amount column ready.');
+                    }
+                });
             }
         });
 
