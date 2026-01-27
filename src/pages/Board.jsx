@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronUp, MessageSquare, Plus } from 'lucide-react';
+import { ChevronUp, MessageSquare, Plus, DollarSign } from 'lucide-react';
 
 const CATEGORIES = ['All', 'Feature', 'Bug', 'Enhancement'];
 
@@ -8,6 +8,7 @@ const Board = () => {
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [sortBy, setSortBy] = useState('votes'); // 'votes' or 'value'
   const [showForm, setShowForm] = useState(false);
   const [newFeature, setNewFeature] = useState({ title: '', description: '', category: 'Feature' });
   const [submitting, setSubmitting] = useState(false);
@@ -88,23 +89,36 @@ const Board = () => {
         </button>
       </div>
 
-      {/* Category Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`${
-                selectedCategory === cat
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
-            >
-              {cat}
-            </button>
-          ))}
-        </nav>
+      <div className="flex flex-col sm:flex-row justify-between items-end sm:items-center gap-4 border-b border-gray-200 pb-1">
+          {/* Category Tabs */}
+          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            {CATEGORIES.map((cat) => (
+                <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`${
+                    selectedCategory === cat
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
+                >
+                {cat}
+                </button>
+            ))}
+          </nav>
+
+          {/* Sort Control */}
+          <div className="flex items-center space-x-2 text-sm pb-2">
+              <span className="text-gray-500">Sort by:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="border-none bg-gray-50 rounded-md text-gray-700 py-1 pl-2 pr-8 focus:ring-0 focus:outline-none cursor-pointer"
+              >
+                  <option value="votes">Most Voted</option>
+                  <option value="value">Highest Value ($)</option>
+              </select>
+          </div>
       </div>
 
       {/* Suggestion Form */}
@@ -178,7 +192,16 @@ const Board = () => {
                 <p className="text-gray-500">No features found in this category.</p>
             </div>
         ) : (
-          features.map((feature) => (
+          features
+            .sort((a, b) => {
+                if (sortBy === 'value') {
+                    // Sort by pledged amount (desc), then votes
+                    return (b.pledged_amount || 0) - (a.pledged_amount || 0) || b.votes - a.votes;
+                }
+                // Default: Sort by votes (desc), then pledged amount
+                return b.votes - a.votes || (b.pledged_amount || 0) - (a.pledged_amount || 0);
+            })
+            .map((feature) => (
             <Link
               key={feature.id}
               to={`/feature/${feature.id}`}
@@ -206,6 +229,12 @@ const Board = () => {
                         }`}>
                             {feature.status.replace('_', ' ')}
                         </span>
+                        {(feature.pledged_amount || 0) > 0 && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700 border border-green-200">
+                                <DollarSign className="w-3 h-3 mr-0.5" />
+                                {feature.pledged_amount}
+                            </span>
+                        )}
                     </div>
                   <p className="text-gray-500 line-clamp-2">{feature.description}</p>
                 </div>

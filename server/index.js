@@ -51,7 +51,7 @@ app.post('/api/features', (req, res) => {
          if (err) {
              res.json({
                  message: 'Feature created',
-                 data: { id: this.lastID, title, description, category: category || 'feature', votes: 0, status: 'under_review' }
+                 data: { id: this.lastID, title, description, category: category || 'feature', votes: 0, pledged_amount: 0, status: 'under_review' }
              });
              return;
          }
@@ -75,6 +75,31 @@ app.post('/api/features/:id/vote', (req, res) => {
         return;
     }
     res.json({ message: 'Voted', changes: this.changes });
+  });
+});
+
+// Pledge to a feature
+app.post('/api/features/:id/pledge', (req, res) => {
+  const { id } = req.params;
+  const { amount } = req.body;
+
+  if (!amount || isNaN(amount) || amount <= 0) {
+      res.status(400).json({ error: 'Valid amount is required' });
+      return;
+  }
+
+  const sql = 'UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?';
+
+  db.run(sql, [amount, id], function (err) {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    if (this.changes === 0) {
+        res.status(404).json({ error: 'Feature not found' });
+        return;
+    }
+    res.json({ message: 'Pledged', changes: this.changes });
   });
 });
 
