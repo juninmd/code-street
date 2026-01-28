@@ -2,15 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronUp, MessageSquare, Plus, DollarSign } from 'lucide-react';
 
-const CATEGORIES = ['All', 'Feature', 'Bug', 'Enhancement'];
+const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
 
 const Board = () => {
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [sortBy, setSortBy] = useState('votes'); // 'votes' or 'value'
+  const [sortBy, setSortBy] = useState('value'); // Default to value for bounties
   const [showForm, setShowForm] = useState(false);
-  const [newFeature, setNewFeature] = useState({ title: '', description: '', category: 'Feature' });
+  const [newFeature, setNewFeature] = useState({ title: '', description: '', category: 'Frontend' });
   const [submitting, setSubmitting] = useState(false);
 
   const fetchFeatures = async () => {
@@ -64,7 +64,7 @@ const Board = () => {
       if (selectedCategory === 'All' || selectedCategory.toLowerCase() === json.data.category) {
           setFeatures([json.data, ...features]);
       }
-      setNewFeature({ title: '', description: '', category: 'Feature' });
+      setNewFeature({ title: '', description: '', category: 'Frontend' });
       setShowForm(false);
     } catch (err) {
       alert('Error creating feature');
@@ -77,28 +77,28 @@ const Board = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Feature Requests</h1>
-          <p className="text-gray-500">Vote on existing ideas or suggest a new one.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Open Bounties</h1>
+          <p className="text-gray-500">Fund features you need. Hunters build what you fund.</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none"
+          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Suggest Feature
+          Post Bounty
         </button>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-end sm:items-center gap-4 border-b border-gray-200 pb-1">
           {/* Category Tabs */}
-          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+          <nav className="-mb-px flex space-x-8 overflow-x-auto pb-2 sm:pb-0" aria-label="Tabs">
             {CATEGORIES.map((cat) => (
                 <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`${
                     selectedCategory === cat
-                    ? 'border-indigo-500 text-indigo-600'
+                    ? 'border-emerald-500 text-emerald-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
                 >
@@ -115,8 +115,8 @@ const Board = () => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="border-none bg-gray-50 rounded-md text-gray-700 py-1 pl-2 pr-8 focus:ring-0 focus:outline-none cursor-pointer"
               >
+                  <option value="value">Highest Bounty ($)</option>
                   <option value="votes">Most Voted</option>
-                  <option value="value">Highest Value ($)</option>
               </select>
           </div>
       </div>
@@ -124,15 +124,15 @@ const Board = () => {
       {/* Suggestion Form */}
       {showForm && (
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 animate-fade-in-down">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">New Suggestion</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Post New Bounty</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">Title</label>
               <input
                 type="text"
                 required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                placeholder="Short, descriptive title"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"
+                placeholder="What needs to be built?"
                 value={newFeature.title}
                 onChange={e => setNewFeature({...newFeature, title: e.target.value})}
               />
@@ -140,7 +140,7 @@ const Board = () => {
             <div>
                 <label className="block text-sm font-medium text-gray-700">Category</label>
                 <select
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"
                     value={newFeature.category}
                     onChange={e => setNewFeature({...newFeature, category: e.target.value})}
                 >
@@ -152,9 +152,9 @@ const Board = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700">Description</label>
               <textarea
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"
                 rows={3}
-                placeholder="Details..."
+                placeholder="Requirements, acceptance criteria..."
                 value={newFeature.description}
                 onChange={e => setNewFeature({...newFeature, description: e.target.value})}
               />
@@ -170,9 +170,9 @@ const Board = () => {
                 <button
                     type="submit"
                     disabled={submitting}
-                    className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:opacity-50"
+                    className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50"
                 >
-                    {submitting ? 'Submitting...' : 'Submit'}
+                    {submitting ? 'Post Bounty' : 'Post Bounty'}
                 </button>
             </div>
           </form>
@@ -189,7 +189,7 @@ const Board = () => {
            </div>
         ) : features.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
-                <p className="text-gray-500">No features found in this category.</p>
+                <p className="text-gray-500">No active bounties in this category.</p>
             </div>
         ) : (
           features
@@ -210,7 +210,7 @@ const Board = () => {
               <div className="flex items-start gap-4">
                 <button
                   onClick={(e) => handleVote(e, feature.id)}
-                  className="flex-shrink-0 flex flex-col items-center justify-center w-12 h-14 bg-gray-50 rounded border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors"
+                  className="flex-shrink-0 flex flex-col items-center justify-center w-12 h-14 bg-emerald-50 rounded border border-emerald-200 text-emerald-600 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
                 >
                   <ChevronUp className="w-5 h-5" />
                   <span className="text-sm font-bold">{feature.votes}</span>

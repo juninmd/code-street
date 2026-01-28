@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronUp, ArrowLeft, MessageSquare, Send, DollarSign } from 'lucide-react';
+import { ChevronUp, ArrowLeft, MessageSquare, Send, DollarSign, Briefcase } from 'lucide-react';
 import { format } from 'date-fns';
 
 const FeatureDetail = () => {
@@ -55,7 +55,7 @@ const FeatureDetail = () => {
   };
 
   const handleStatusChange = async (newStatus) => {
-      setFeature({ ...feature, status: newStatus });
+      setFeature(prev => ({ ...prev, status: newStatus }));
       try {
           await fetch(`/api/features/${id}/status`, {
               method: 'PATCH',
@@ -66,6 +66,11 @@ const FeatureDetail = () => {
           console.error(err);
       }
   }
+
+  const handleClaim = async () => {
+      if (!window.confirm('Are you sure you want to claim this bounty? This will mark it as In Progress.')) return;
+      await handleStatusChange('in_progress');
+  };
 
   const handleCommentSubmit = async (e) => {
       e.preventDefault();
@@ -121,7 +126,7 @@ const FeatureDetail = () => {
               <div className="flex items-start gap-6">
                   <button
                     onClick={handleVote}
-                    className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 bg-gray-50 rounded-lg border border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors group"
+                    className="flex-shrink-0 flex flex-col items-center justify-center w-16 h-20 bg-emerald-50 rounded-lg border border-emerald-200 text-emerald-600 hover:border-emerald-300 hover:text-emerald-700 transition-colors group"
                   >
                     <ChevronUp className="w-6 h-6 group-hover:-translate-y-0.5 transition-transform" />
                     <span className="text-lg font-bold">{feature.votes}</span>
@@ -141,12 +146,12 @@ const FeatureDetail = () => {
                       <p className="text-gray-600 text-lg leading-relaxed">{feature.description}</p>
 
                       {/* Pledge Section */}
-                      <div className="mt-6 p-5 bg-green-50 border border-green-100 rounded-xl">
-                          <h3 className="text-green-900 font-bold flex items-center mb-2">
+                      <div className="mt-6 p-5 bg-emerald-50 border border-emerald-100 rounded-xl">
+                          <h3 className="text-emerald-900 font-bold flex items-center mb-2">
                               <DollarSign className="w-5 h-5 mr-1" />
-                              Total Pledged: <span className="text-2xl ml-2">${(feature.pledged_amount || 0).toLocaleString()}</span>
+                              Total Bounty: <span className="text-2xl ml-2">${(feature.pledged_amount || 0).toLocaleString()}</span>
                           </h3>
-                          <p className="text-green-700 text-sm mb-4">Back this feature to help prioritize development.</p>
+                          <p className="text-emerald-700 text-sm mb-4">Add to this bounty to attract top developers.</p>
                           <form onSubmit={handlePledge} className="flex gap-3">
                               <div className="relative">
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
@@ -157,22 +162,41 @@ const FeatureDetail = () => {
                                       value={pledgeAmount}
                                       onChange={(e) => setPledgeAmount(e.target.value)}
                                       placeholder="Amount"
-                                      className="pl-7 pr-4 py-2 border border-green-200 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500 w-32 outline-none"
+                                      className="pl-7 pr-4 py-2 border border-emerald-200 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 w-32 outline-none"
                                   />
                               </div>
                               <button
                                   type="submit"
                                   disabled={isPledging || !pledgeAmount}
-                                  className="px-4 py-2 bg-green-600 text-white font-medium rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors shadow-sm"
+                                  className="px-4 py-2 bg-emerald-600 text-white font-medium rounded-md hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm"
                               >
-                                  {isPledging ? 'Pledging...' : 'Pledge Funds'}
+                                  {isPledging ? 'Processing...' : 'Add to Bounty'}
                               </button>
                           </form>
                       </div>
 
+                      {/* Developer Actions (Claim) */}
+                      {(feature.status === 'under_review' || feature.status === 'planned') && (
+                          <div className="mt-6 p-5 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between">
+                              <div>
+                                  <h3 className="text-gray-900 font-bold flex items-center">
+                                      <Briefcase className="w-5 h-5 mr-2 text-gray-500" />
+                                      Developer Zone
+                                  </h3>
+                                  <p className="text-gray-500 text-sm mt-1">Ready to build this? Claim the bounty to start.</p>
+                              </div>
+                              <button
+                                onClick={handleClaim}
+                                className="px-5 py-2.5 bg-gray-900 text-white font-bold rounded-lg hover:bg-black transition-colors shadow-sm"
+                              >
+                                  Claim Bounty
+                              </button>
+                          </div>
+                      )}
+
                       <div className="mt-6 pt-6 border-t border-gray-100 flex items-center justify-between">
                           <div className="text-sm text-gray-400">
-                              {feature.category} &bull; Suggested on {feature.created_at ? format(new Date(feature.created_at), 'MMM d, yyyy') : 'Recently'}
+                              {feature.category} &bull; Posted on {feature.created_at ? format(new Date(feature.created_at), 'MMM d, yyyy') : 'Recently'}
                           </div>
                           <button onClick={() => setIsAdmin(!isAdmin)} className="text-xs text-gray-300 hover:text-gray-500">
                               {isAdmin ? 'Exit Admin' : 'Admin'}
@@ -188,7 +212,7 @@ const FeatureDetail = () => {
                                         key={s}
                                         onClick={() => handleStatusChange(s)}
                                         className={`px-3 py-1 rounded text-xs font-medium border ${
-                                            feature.status === s ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                                            feature.status === s ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
                                         }`}
                                       >
                                           {s.replace('_', ' ')}
@@ -212,15 +236,15 @@ const FeatureDetail = () => {
           <div className="mb-8">
               <form onSubmit={handleCommentSubmit} className="relative">
                   <textarea
-                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-4 border pr-12"
+                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-4 border pr-12"
                     rows={3}
-                    placeholder="Leave a comment..."
+                    placeholder="Ask questions or discuss implementation..."
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
                   />
                   <button
                     type="submit"
-                    className="absolute bottom-2 right-2 p-2 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                    className="absolute bottom-2 right-2 p-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
                     disabled={!newComment.trim()}
                   >
                       <Send className="w-4 h-4" />
