@@ -73,8 +73,26 @@ const Board = () => {
     }
   };
 
+  const totalBounty = features.reduce((sum, f) => sum + (f.pledged_amount || 0), 0);
+  const activeBountiesCount = features.filter(f => f.status !== 'live').length;
+
   return (
     <div className="space-y-6">
+      {/* Global Stats Banner */}
+      <div className="bg-emerald-900 rounded-2xl p-6 mb-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-800 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -mr-16 -mt-16"></div>
+        <div className="relative z-10 grid grid-cols-2 gap-8">
+            <div>
+                <p className="text-emerald-300 text-sm font-medium uppercase tracking-wider mb-1">Total Bounty Pool</p>
+                <p className="text-4xl font-extrabold tracking-tight">${totalBounty.toLocaleString()}</p>
+            </div>
+            <div>
+                <p className="text-emerald-300 text-sm font-medium uppercase tracking-wider mb-1">Active Bounties</p>
+                <p className="text-4xl font-extrabold tracking-tight">{activeBountiesCount}</p>
+            </div>
+        </div>
+      </div>
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Open Bounties</h1>

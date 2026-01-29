@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { MessageSquare, Map, PartyPopper, PlusCircle } from 'lucide-react';
+import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase } from 'lucide-react';
 
 const Layout = () => {
   return (
@@ -27,6 +27,19 @@ const Layout = () => {
                 >
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Bounties
+                </NavLink>
+                <NavLink
+                  to="/hunter"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive
+                        ? 'border-emerald-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`
+                  }
+                >
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  Hunter
                 </NavLink>
                 <NavLink
                   to="/roadmap"
@@ -72,7 +85,7 @@ const Layout = () => {
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 sm:hidden pb-safe">
-        <div className="grid grid-cols-3 h-16">
+        <div className="grid grid-cols-4 h-16">
           <NavLink
             to="/"
             className={({ isActive }) =>
@@ -84,6 +97,17 @@ const Layout = () => {
           >
             <MessageSquare className="w-6 h-6" />
             <span className="text-xs font-medium">Bounties</span>
+          </NavLink>
+          <NavLink
+            to="/hunter"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center space-y-1 ${
+                isActive ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'
+              }`
+            }
+          >
+            <Briefcase className="w-6 h-6" />
+            <span className="text-xs font-medium">Hunter</span>
           </NavLink>
           <NavLink
             to="/roadmap"
