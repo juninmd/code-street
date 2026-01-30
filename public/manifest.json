@@ -1,0 +1,16 @@
+{
+  "name": "CodeBounty",
+  "short_name": "CodeBounty",
+  "description": "Crowdfunded Feature Marketplace",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#059669",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    }
+  ]
+}
