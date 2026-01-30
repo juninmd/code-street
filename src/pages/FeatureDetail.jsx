@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronUp, ArrowLeft, MessageSquare, Send, DollarSign, Briefcase } from 'lucide-react';
 import { format } from 'date-fns';
+import confetti from 'canvas-confetti';
 
 const FeatureDetail = () => {
   const { id } = useParams();
@@ -102,6 +103,12 @@ const FeatureDetail = () => {
               body: JSON.stringify({ amount: parseFloat(pledgeAmount) })
           });
           if (res.ok) {
+              confetti({
+                  particleCount: 150,
+                  spread: 100,
+                  origin: { y: 0.6 },
+                  colors: ['#10B981', '#FFD700'] // Emerald and Gold
+              });
               setFeature(prev => ({ ...prev, pledged_amount: (prev.pledged_amount || 0) + parseFloat(pledgeAmount) }));
               setPledgeAmount('');
           }
