@@ -1,8 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase } from 'lucide-react';
+import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X } from 'lucide-react';
 
 const Layout = () => {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallBanner, setShowInstallBanner] = useState(false);
+
+  useEffect(() => {
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBanner(true);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+    setShowInstallBanner(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Desktop Navigation */}
@@ -82,6 +105,35 @@ const Layout = () => {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-24">
         <Outlet />
       </main>
+
+      {/* PWA Install Banner */}
+      {showInstallBanner && (
+        <div className="fixed bottom-20 left-4 right-4 z-50 bg-emerald-900 rounded-lg p-4 shadow-2xl flex items-center justify-between border border-emerald-700 sm:bottom-4 sm:left-auto sm:right-4 sm:w-96 animate-fade-in-up">
+          <div className="flex items-center text-white">
+            <div className="bg-emerald-700 p-2 rounded-full mr-3">
+              <Download className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-bold text-sm">Install CodeBounty</p>
+              <p className="text-emerald-200 text-xs">Add to home screen for quick access</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleInstallClick}
+              className="bg-emerald-500 hover:bg-emerald-400 text-white text-xs font-bold py-2 px-3 rounded transition-colors"
+            >
+              Install
+            </button>
+            <button
+              onClick={() => setShowInstallBanner(false)}
+              className="text-emerald-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 sm:hidden pb-safe">

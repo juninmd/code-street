@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronUp, MessageSquare, Plus, DollarSign } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
 
 const Board = () => {
+  const navigate = useNavigate();
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -38,6 +40,18 @@ const Board = () => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation();
 
+    // Celebration
+    confetti({
+        particleCount: 30,
+        startVelocity: 15,
+        spread: 360,
+        origin: {
+            x: e.clientX / window.innerWidth,
+            y: e.clientY / window.innerHeight
+        },
+        colors: ['#10B981', '#34D399', '#059669'] // Emerald shades
+    });
+
     // Optimistic UI
     setFeatures(features.map(f => f.id === id ? { ...f, votes: f.votes + 1 } : f));
 
@@ -46,6 +60,24 @@ const Board = () => {
     } catch (err) {
       setFeatures(features.map(f => f.id === id ? { ...f, votes: f.votes - 1 } : f));
     }
+  };
+
+  const handleMysteryBounty = () => {
+      const available = features.filter(f => f.status === 'under_review' || f.status === 'planned');
+      if (available.length === 0) return;
+
+      const random = available[Math.floor(Math.random() * available.length)];
+
+      confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#FFD700', '#FFA500'] // Gold colors
+      });
+
+      setTimeout(() => {
+          navigate(`/feature/${random.id}`);
+      }, 800);
   };
 
   const handleSubmit = async (e) => {
@@ -98,13 +130,22 @@ const Board = () => {
           <h1 className="text-2xl font-bold text-gray-900">Open Bounties</h1>
           <p className="text-gray-500">Fund features you need. Hunters build what you fund.</p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Post Bounty
-        </button>
+        <div className="flex gap-2">
+            <button
+            onClick={handleMysteryBounty}
+            className="inline-flex items-center px-4 py-2 border border-emerald-200 shadow-sm text-sm font-bold rounded-md text-emerald-700 bg-emerald-50 hover:bg-emerald-100 focus:outline-none animate-pulse-gold"
+            >
+            <Sparkles className="w-4 h-4 mr-2 text-yellow-500" />
+            Mystery Bounty
+            </button>
+            <button
+            onClick={() => setShowForm(!showForm)}
+            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none"
+            >
+            <Plus className="w-4 h-4 mr-2" />
+            Post Bounty
+            </button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-end sm:items-center gap-4 border-b border-gray-200 pb-1">
