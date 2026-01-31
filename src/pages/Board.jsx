@@ -13,7 +13,19 @@ const Board = () => {
   const [sortBy, setSortBy] = useState('value'); // Default to value for bounties
   const [showForm, setShowForm] = useState(false);
   const [newFeature, setNewFeature] = useState({ title: '', description: '', category: 'Frontend' });
+  const [initialPledge, setInitialPledge] = useState('');
+  const [stats, setStats] = useState({ total_payout: 0, active_bounty: 0 });
   const [submitting, setSubmitting] = useState(false);
+
+  const fetchStats = async () => {
+      try {
+          const res = await fetch('/api/stats');
+          const json = await res.json();
+          setStats(json);
+      } catch (err) {
+          console.error(err);
+      }
+  };
 
   const fetchFeatures = async () => {
     setLoading(true);
@@ -34,7 +46,22 @@ const Board = () => {
 
   useEffect(() => {
     fetchFeatures();
+    fetchStats();
   }, [selectedCategory]);
+
+  const simulateAiEstimation = () => {
+      const text = newFeature.description || '';
+      const title = newFeature.title || '';
+      let estimate = 50; // Base cost
+      estimate += text.length * 0.1; // Complexity factor
+
+      const keywords = ['AI', 'Mobile', 'Crypto', 'Data', 'Blockchain', '3D', 'App'];
+      keywords.forEach(k => {
+          if ((title + text).toLowerCase().includes(k.toLowerCase())) estimate += 200;
+      });
+
+      setInitialPledge(Math.ceil(estimate).toString());
+  };
 
   const handleVote = async (e, id) => {
     e.preventDefault(); // Prevent navigation
@@ -89,7 +116,11 @@ const Board = () => {
       const res = await fetch('/api/features', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newFeature, category: newFeature.category.toLowerCase() }),
+        body: JSON.stringify({
+            ...newFeature,
+            category: newFeature.category.toLowerCase(),
+            initial_pledge: initialPledge
+        }),
       });
       const json = await res.json();
       // If the current view matches the new feature's category, prepend it
@@ -97,16 +128,15 @@ const Board = () => {
           setFeatures([json.data, ...features]);
       }
       setNewFeature({ title: '', description: '', category: 'Frontend' });
+      setInitialPledge('');
       setShowForm(false);
+      fetchStats();
     } catch (err) {
       alert('Error creating feature');
     } finally {
       setSubmitting(false);
     }
   };
-
-  const totalBounty = features.reduce((sum, f) => sum + (f.pledged_amount || 0), 0);
-  const activeBountiesCount = features.filter(f => f.status !== 'live').length;
 
   return (
     <div className="space-y-6">
@@ -115,12 +145,12 @@ const Board = () => {
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-800 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -mr-16 -mt-16"></div>
         <div className="relative z-10 grid grid-cols-2 gap-8">
             <div>
-                <p className="text-emerald-300 text-sm font-medium uppercase tracking-wider mb-1">Total Bounty Pool</p>
-                <p className="text-4xl font-extrabold tracking-tight">${totalBounty.toLocaleString()}</p>
+                <p className="text-emerald-300 text-sm font-medium uppercase tracking-wider mb-1">Market Volume (Paid Out)</p>
+                <p className="text-4xl font-extrabold tracking-tight">${(stats.total_payout || 0).toLocaleString()}</p>
             </div>
             <div>
-                <p className="text-emerald-300 text-sm font-medium uppercase tracking-wider mb-1">Active Bounties</p>
-                <p className="text-4xl font-extrabold tracking-tight">{activeBountiesCount}</p>
+                <p className="text-emerald-300 text-sm font-medium uppercase tracking-wider mb-1">Active Bounty Pool</p>
+                <p className="text-4xl font-extrabold tracking-tight">${(stats.active_bounty || 0).toLocaleString()}</p>
             </div>
         </div>
       </div>
@@ -218,6 +248,35 @@ const Board = () => {
                 onChange={e => setNewFeature({...newFeature, description: e.target.value})}
               />
             </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Initial Pledge ($)</label>
+                <div className="mt-1 flex rounded-md shadow-sm">
+                    <div className="relative flex-grow focus-within:z-10">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span className="text-gray-500 sm:text-sm">$</span>
+                        </div>
+                        <input
+                        type="number"
+                        min="0"
+                        className="focus:ring-emerald-500 focus:border-emerald-500 block w-full rounded-none rounded-l-md pl-7 sm:text-sm border-gray-300 border p-2"
+                        placeholder="0"
+                        value={initialPledge}
+                        onChange={e => setInitialPledge(e.target.value)}
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={simulateAiEstimation}
+                        className="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                    >
+                        <Sparkles className="h-4 w-4 text-purple-500" />
+                        <span>Ask AI Estimate</span>
+                    </button>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">Seed the bounty to attract hunters faster.</p>
+            </div>
+
             <div className="flex justify-end gap-2">
                 <button
                     type="button"

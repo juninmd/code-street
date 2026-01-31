@@ -32,32 +32,63 @@ app.get('/api/features', (req, res) => {
 
 // Create a new feature
 app.post('/api/features', (req, res) => {
-  const { title, description, category } = req.body;
+  const { title, description, category, initial_pledge } = req.body;
   if (!title) {
     res.status(400).json({ error: 'Title is required' });
     return;
   }
 
-  const sql = 'INSERT INTO features (title, description, category) VALUES (?, ?, ?)';
-  const params = [title, description || '', category || 'feature'];
+  const pledge = (initial_pledge && !isNaN(initial_pledge)) ? parseFloat(initial_pledge) : 0;
+
+  const sql = 'INSERT INTO features (title, description, category, pledged_amount) VALUES (?, ?, ?, ?)';
+  const params = [title, description || '', category || 'feature', pledge];
 
   db.run(sql, params, function (err) {
     if (err) {
       res.status(400).json({ error: err.message });
       return;
     }
+
+    const featureId = this.lastID;
+
     // Fetch the created feature to return full object
-    db.get('SELECT * FROM features WHERE id = ?', [this.lastID], (err, row) => {
-         if (err) {
+    db.get('SELECT * FROM features WHERE id = ?', [featureId], (fetchErr, row) => {
+         if (fetchErr) {
+             // If fetching the new row fails, return the constructed object so the UI doesn't break
              res.json({
                  message: 'Feature created',
-                 data: { id: this.lastID, title, description, category: category || 'feature', votes: 0, pledged_amount: 0, status: 'under_review' }
+                 data: { id: featureId, title, description, category: category || 'feature', votes: 0, pledged_amount: pledge, status: 'under_review' }
              });
              return;
          }
          res.json({ message: 'Feature created', data: row });
     });
   });
+});
+
+// Get Platform Stats
+app.get('/api/stats', (req, res) => {
+    const stats = {};
+
+    // 1. Total Payout (live)
+    db.get("SELECT SUM(pledged_amount) as val FROM features WHERE status = 'live'", [], (err, row) => {
+        if (err) return res.status(500).json({error: err.message});
+        stats.total_payout = row && row.val ? row.val : 0;
+
+        // 2. Active Bounty (not live)
+        db.get("SELECT SUM(pledged_amount) as val FROM features WHERE status != 'live'", [], (err, row) => {
+            if (err) return res.status(500).json({error: err.message});
+            stats.active_bounty = row && row.val ? row.val : 0;
+
+            // 3. Top Category
+            db.get("SELECT category, SUM(pledged_amount) as total FROM features GROUP BY category ORDER BY total DESC LIMIT 1", [], (err, row) => {
+                 if (err) return res.status(500).json({error: err.message});
+                 stats.top_category = row ? row.category : 'N/A';
+
+                 res.json(stats);
+            });
+        });
+    });
 });
 
 // Vote for a feature

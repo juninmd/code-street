@@ -21,6 +21,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
             votes INTEGER DEFAULT 0,
             status TEXT DEFAULT 'under_review',
             category TEXT DEFAULT 'feature',
+            pledged_amount REAL DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`, (err) => {
             if (err) {
