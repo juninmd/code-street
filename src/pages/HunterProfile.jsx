@@ -10,39 +10,56 @@ const TOP_HUNTERS = [
 
 const HunterProfile = () => {
   const [claimedBounties, setClaimedBounties] = useState([]);
+  const [stats, setStats] = useState({ active_bounty: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchBounties = async () => {
+    const fetchData = async () => {
       try {
-        const res = await fetch('/api/features');
-        const json = await res.json();
+        const [featRes, statsRes] = await Promise.all([
+            fetch('/api/features'),
+            fetch('/api/stats')
+        ]);
+        const featJson = await featRes.json();
+        const statsJson = await statsRes.json();
+
         // Filter for 'in_progress' to simulate claimed bounties
-        const claimed = json.data.filter(f => f.status === 'in_progress');
+        const claimed = featJson.data.filter(f => f.status === 'in_progress');
         setClaimedBounties(claimed);
+        setStats(statsJson);
       } catch (err) {
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchBounties();
+    fetchData();
   }, []);
 
-  const totalEarnings = claimedBounties.reduce((sum, f) => sum + (f.pledged_amount || 0), 0);
+  const myClaimedValue = claimedBounties.reduce((sum, f) => sum + (f.pledged_amount || 0), 0);
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Hunter Dashboard</h1>
 
       {/* Earnings Card */}
-      <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-lg">
-          <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Potential Earnings</p>
-          <div className="flex items-center">
-              <span className="text-4xl font-extrabold tracking-tight text-white">${totalEarnings.toLocaleString()}</span>
-              {claimedBounties.length > 0 && <span className="ml-3 px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded-full border border-emerald-500/30">Active</span>}
-          </div>
-          <p className="text-gray-400 text-sm mt-4">You have {claimedBounties.length} active bounties.</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-lg">
+            <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-1">Total Market Opportunity</p>
+            <div className="flex items-center">
+                <span className="text-4xl font-extrabold tracking-tight text-white">${(stats.active_bounty || 0).toLocaleString()}</span>
+            </div>
+            <p className="text-gray-400 text-sm mt-4">Total value available to claim on the platform.</p>
+        </div>
+
+        <div className="bg-emerald-900 rounded-2xl p-6 text-white shadow-lg">
+            <p className="text-emerald-300 text-sm font-medium uppercase tracking-wider mb-1">My Potential Earnings</p>
+            <div className="flex items-center">
+                <span className="text-4xl font-extrabold tracking-tight text-white">${myClaimedValue.toLocaleString()}</span>
+                {claimedBounties.length > 0 && <span className="ml-3 px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded-full border border-emerald-500/30">Active</span>}
+            </div>
+            <p className="text-emerald-200 text-sm mt-4">You have {claimedBounties.length} active hunts.</p>
+        </div>
       </div>
 
       {/* Leaderboard */}
