@@ -90,7 +90,7 @@ const HunterProfile = () => {
           });
 
           if (!res.ok) {
-              const errorBody = await res.text().catch(() => 'Unknown error');
+              const errorBody = await res.text().catch(() => 'Unable to read error response');
               console.error(`Failed to update bounty status: ${res.status} ${res.statusText}`, errorBody);
               
               // Revert the optimistic UI update
