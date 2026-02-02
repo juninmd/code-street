@@ -51,13 +51,20 @@ const HunterProfile = () => {
       e.preventDefault();
       if (!window.confirm('Mark this bounty as delivered? This will move it to your Wallet.')) return;
 
-      // Optimistic update
-      const bounty = activeBounties.find(b => b.id === id);
-      if (bounty) {
-          setActiveBounties(activeBounties.filter(b => b.id !== id));
-          setCompletedBounties([...completedBounties, { ...bounty, status: 'live' }]);
-      }
+      // Optimistic update using functional state setters to avoid stale closures
+      setActiveBounties(prevActiveBounties => {
+          const bounty = prevActiveBounties.find(b => b.id === id);
+          if (!bounty) {
+              return prevActiveBounties;
+          }
 
+          setCompletedBounties(prevCompletedBounties => [
+              ...prevCompletedBounties,
+              { ...bounty, status: 'live' },
+          ]);
+
+          return prevActiveBounties.filter(b => b.id !== id);
+      });
       try {
           await fetch(`/api/features/${id}/status`, {
               method: 'PATCH',
