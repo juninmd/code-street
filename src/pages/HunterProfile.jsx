@@ -55,9 +55,9 @@ const HunterProfile = () => {
       let capturedBounty = null;
 
       // Helper function to revert optimistic UI update
-      const revertOptimisticUpdate = () => {
+      const revertOptimisticUpdate = (bountyId) => {
           if (capturedBounty) {
-              setCompletedBounties(prevCompletedBounties => prevCompletedBounties.filter(b => b.id !== id));
+              setCompletedBounties(prevCompletedBounties => prevCompletedBounties.filter(b => b.id !== bountyId));
               setActiveBounties(prevActiveBounties => [
                   ...prevActiveBounties,
                   { ...capturedBounty, status: 'in_progress' }
@@ -94,7 +94,7 @@ const HunterProfile = () => {
               console.error(`Failed to update bounty status: ${res.status} ${res.statusText}`, errorBody);
               
               // Revert the optimistic UI update
-              revertOptimisticUpdate();
+              revertOptimisticUpdate(id);
               
               alert(`Failed to mark bounty as delivered: ${res.statusText}`);
               return;
@@ -110,7 +110,7 @@ const HunterProfile = () => {
           console.error('Network error while updating bounty:', err);
           
           // Revert the optimistic UI update
-          revertOptimisticUpdate();
+          revertOptimisticUpdate(id);
           
           alert('Network error: Failed to mark bounty as delivered. Please try again.');
       }
