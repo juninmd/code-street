@@ -36,6 +36,15 @@ const db = new sqlite3.Database(dbPath, (err) => {
                         console.log('pledged_amount column ready.');
                     }
                 });
+
+                // Add is_boosted column if it doesn't exist
+                db.run('ALTER TABLE features ADD COLUMN is_boosted INTEGER DEFAULT 0', (err) => {
+                    if (err && !err.message.includes('duplicate column')) {
+                        console.error('Error adding is_boosted column', err.message);
+                    } else {
+                        console.log('is_boosted column ready.');
+                    }
+                });
             }
         });
 

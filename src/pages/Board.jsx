@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles } from 'lucide-react';
+import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
@@ -89,6 +89,32 @@ const Board = () => {
     }
   };
 
+  const handleBoost = async (e, id) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Simulation of payment
+      if(!window.confirm("Boost this bounty for $10? This makes it stick to the top!")) return;
+
+      try {
+          const res = await fetch(`/api/features/${id}/boost`, { method: 'POST' });
+          if(res.ok) {
+              confetti({
+                  particleCount: 150,
+                  spread: 60,
+                  colors: ['#FFD700', '#FDB931'] // Gold
+              });
+              // Optimistic update
+              setFeatures(features.map(f => f.id === id ? { ...f, is_boosted: 1 } : f));
+              // Refresh to get correct order
+              fetchFeatures();
+              fetchStats(); // Update revenue
+          }
+      } catch (err) {
+          alert("Failed to boost");
+      }
+  };
+
   const handleMysteryBounty = () => {
       const available = features.filter(f => f.status === 'under_review' || f.status === 'planned');
       if (available.length === 0) return;
@@ -143,7 +169,7 @@ const Board = () => {
       {/* Global Stats Banner */}
       <div className="bg-emerald-900 rounded-2xl p-6 mb-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-800 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -mr-16 -mt-16"></div>
-        <div className="relative z-10 grid grid-cols-2 gap-8">
+        <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-8">
             <div>
                 <p className="text-emerald-300 text-sm font-medium uppercase tracking-wider mb-1">Market Volume (Paid Out)</p>
                 <p className="text-4xl font-extrabold tracking-tight">${(stats.total_payout || 0).toLocaleString()}</p>
@@ -151,6 +177,10 @@ const Board = () => {
             <div>
                 <p className="text-emerald-300 text-sm font-medium uppercase tracking-wider mb-1">Active Bounty Pool</p>
                 <p className="text-4xl font-extrabold tracking-tight">${(stats.active_bounty || 0).toLocaleString()}</p>
+            </div>
+            <div>
+                <p className="text-yellow-300 text-sm font-medium uppercase tracking-wider mb-1">Platform Revenue</p>
+                <p className="text-4xl font-extrabold tracking-tight text-yellow-400">${(stats.platform_revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
             </div>
         </div>
       </div>
@@ -323,7 +353,7 @@ const Board = () => {
             <Link
               key={feature.id}
               to={`/feature/${feature.id}`}
-              className="block bg-white hover:bg-gray-50 transition-shadow shadow-sm hover:shadow rounded-lg p-6 border border-gray-100"
+              className={`block bg-white hover:bg-gray-50 transition-all shadow-sm hover:shadow-md rounded-lg p-6 border ${feature.is_boosted ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-100'}`}
             >
               <div className="flex items-start gap-4">
                 <button
@@ -335,6 +365,7 @@ const Board = () => {
                 </button>
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
+                        {feature.is_boosted ? <Zap className="w-4 h-4 text-yellow-500 fill-yellow-500" /> : null}
                         <h3 className="text-lg font-semibold text-gray-900 truncate">{feature.title}</h3>
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 capitalize">
                             {feature.category}
@@ -356,9 +387,19 @@ const Board = () => {
                     </div>
                   <p className="text-gray-500 line-clamp-2">{feature.description}</p>
                 </div>
-                <div className="hidden sm:flex items-center text-gray-400">
-                    <MessageSquare className="w-5 h-5 mr-1" />
-                    {/* We could show comment count here if API returned it, skipping for now */}
+                <div className="hidden sm:flex flex-col items-end gap-2">
+                    {!feature.is_boosted && (
+                        <button
+                            onClick={(e) => handleBoost(e, feature.id)}
+                            className="text-xs font-bold text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 px-2 py-1 rounded border border-transparent hover:border-yellow-200 transition-colors flex items-center"
+                        >
+                            <Zap className="w-3 h-3 mr-1" />
+                            Boost $10
+                        </button>
+                    )}
+                    <div className="flex items-center text-gray-400">
+                        <MessageSquare className="w-5 h-5 mr-1" />
+                    </div>
                 </div>
               </div>
             </Link>
