@@ -70,6 +70,15 @@ const FeatureDetail = () => {
 
   const handleClaim = async () => {
       if (!window.confirm('Are you sure you want to claim this bounty? This will mark it as In Progress.')) return;
+
+      // Save to local claims
+      const myClaims = JSON.parse(localStorage.getItem('my_claims') || '[]');
+      const featureId = parseInt(id);
+      if (!myClaims.includes(featureId)) {
+          myClaims.push(featureId);
+          localStorage.setItem('my_claims', JSON.stringify(myClaims));
+      }
+
       await handleStatusChange('in_progress');
   };
 
