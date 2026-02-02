@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { DollarSign, Briefcase, Clock, CheckCircle, Trophy, Wallet, ArrowRight } from 'lucide-react';
+import { DollarSign, Briefcase, Clock, CheckCircle, Trophy, Wallet } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const TOP_HUNTERS = [
