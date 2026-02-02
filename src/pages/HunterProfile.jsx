@@ -51,12 +51,17 @@ const HunterProfile = () => {
       e.preventDefault();
       if (!window.confirm('Mark this bounty as delivered? This will move it to your Wallet.')) return;
 
+      // Capture the bounty reference for potential revert
+      let capturedBounty = null;
+
       // Optimistic update using functional state setters to avoid stale closures
       setActiveBounties(prevActiveBounties => {
           const bounty = prevActiveBounties.find(b => b.id === id);
           if (!bounty) {
               return prevActiveBounties;
           }
+
+          capturedBounty = bounty;
 
           setCompletedBounties(prevCompletedBounties => [
               ...prevCompletedBounties,
@@ -65,12 +70,30 @@ const HunterProfile = () => {
 
           return prevActiveBounties.filter(b => b.id !== id);
       });
+
       try {
-          await fetch(`/api/features/${id}/status`, {
+          const res = await fetch(`/api/features/${id}/status`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ status: 'live' })
           });
+
+          if (!res.ok) {
+              const errorBody = await res.text().catch(() => 'Unknown error');
+              console.error(`Failed to update bounty status: ${res.status} ${res.statusText}`, errorBody);
+              
+              // Revert the optimistic UI update
+              if (capturedBounty) {
+                  setCompletedBounties(prevCompletedBounties => prevCompletedBounties.filter(b => b.id !== id));
+                  setActiveBounties(prevActiveBounties => [
+                      ...prevActiveBounties,
+                      { ...capturedBounty, status: 'in_progress' }
+                  ]);
+              }
+              
+              alert(`Failed to mark bounty as delivered: ${res.statusText}`);
+              return;
+          }
 
           confetti({
             particleCount: 100,
@@ -79,8 +102,18 @@ const HunterProfile = () => {
             colors: ['#10B981', '#34D399']
           });
       } catch (err) {
-          console.error(err);
-          // Revert if failed (omitted for brevity)
+          console.error('Network error while updating bounty:', err);
+          
+          // Revert the optimistic UI update
+          if (capturedBounty) {
+              setCompletedBounties(prevCompletedBounties => prevCompletedBounties.filter(b => b.id !== id));
+              setActiveBounties(prevActiveBounties => [
+                  ...prevActiveBounties,
+                  { ...capturedBounty, status: 'in_progress' }
+              ]);
+          }
+          
+          alert('Network error: Failed to mark bounty as delivered. Please try again.');
       }
   };
 
