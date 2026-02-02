@@ -54,6 +54,17 @@ const HunterProfile = () => {
       // Capture the bounty reference for potential revert
       let capturedBounty = null;
 
+      // Helper function to revert optimistic UI update
+      const revertOptimisticUpdate = () => {
+          if (capturedBounty) {
+              setCompletedBounties(prevCompletedBounties => prevCompletedBounties.filter(b => b.id !== id));
+              setActiveBounties(prevActiveBounties => [
+                  ...prevActiveBounties,
+                  { ...capturedBounty, status: 'in_progress' }
+              ]);
+          }
+      };
+
       // Optimistic update using functional state setters to avoid stale closures
       setActiveBounties(prevActiveBounties => {
           const bounty = prevActiveBounties.find(b => b.id === id);
@@ -83,13 +94,7 @@ const HunterProfile = () => {
               console.error(`Failed to update bounty status: ${res.status} ${res.statusText}`, errorBody);
               
               // Revert the optimistic UI update
-              if (capturedBounty) {
-                  setCompletedBounties(prevCompletedBounties => prevCompletedBounties.filter(b => b.id !== id));
-                  setActiveBounties(prevActiveBounties => [
-                      ...prevActiveBounties,
-                      { ...capturedBounty, status: 'in_progress' }
-                  ]);
-              }
+              revertOptimisticUpdate();
               
               alert(`Failed to mark bounty as delivered: ${res.statusText}`);
               return;
@@ -105,13 +110,7 @@ const HunterProfile = () => {
           console.error('Network error while updating bounty:', err);
           
           // Revert the optimistic UI update
-          if (capturedBounty) {
-              setCompletedBounties(prevCompletedBounties => prevCompletedBounties.filter(b => b.id !== id));
-              setActiveBounties(prevActiveBounties => [
-                  ...prevActiveBounties,
-                  { ...capturedBounty, status: 'in_progress' }
-              ]);
-          }
+          revertOptimisticUpdate();
           
           alert('Network error: Failed to mark bounty as delivered. Please try again.');
       }
