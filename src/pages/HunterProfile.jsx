@@ -56,7 +56,7 @@ const HunterProfile = () => {
 
       // Helper function to revert optimistic UI update
       const revertOptimisticUpdate = (bountyId) => {
-          if (capturedBounty) {
+          if (capturedBounty && capturedBounty.id === bountyId) {
               setCompletedBounties(prevCompletedBounties => prevCompletedBounties.filter(b => b.id !== bountyId));
               setActiveBounties(prevActiveBounties => [
                   ...prevActiveBounties,
