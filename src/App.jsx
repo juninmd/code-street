@@ -6,6 +6,7 @@ import Roadmap from './pages/Roadmap';
 import Changelog from './pages/Changelog';
 import FeatureDetail from './pages/FeatureDetail';
 import HunterProfile from './pages/HunterProfile';
+import AdminWealth from './pages/AdminWealth';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="changelog" element={<Changelog />} />
         <Route path="feature/:id" element={<FeatureDetail />} />
         <Route path="hunter" element={<HunterProfile />} />
+        <Route path="admin/wealth" element={<AdminWealth />} />
       </Route>
     </Routes>
   );
