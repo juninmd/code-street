@@ -1,0 +1,1 @@
+## 2024-05-22 - [Performance Optimization] | **Learning:** SQLite serialized mode handles queueing, but race conditions exist if tests run before async schema migrations complete. | **Action:** Define full schema in CREATE TABLE for fresh DBs to avoid ALTER TABLE race conditions in tests.
