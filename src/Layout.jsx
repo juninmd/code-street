@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X } from 'lucide-react';
+import LiveTicker from './components/LiveTicker';
 
 const Layout = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -28,6 +29,7 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      <LiveTicker />
       {/* Desktop Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 hidden sm:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

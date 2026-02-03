@@ -19,7 +19,7 @@ app.get('/api/features', (req, res) => {
     params.push(category);
   }
 
-  sql += ' ORDER BY votes DESC';
+  sql += ' ORDER BY is_boosted DESC, votes DESC';
 
   db.all(sql, params, (err, rows) => {
     if (err) {
@@ -85,6 +85,11 @@ app.get('/api/stats', (req, res) => {
                  if (err) return res.status(500).json({error: err.message});
                  stats.top_category = row ? row.category : 'N/A';
 
+                 // 4. Platform Revenue (Simulated 5%)
+                 // We calculate based on all money in the system (payout + active)
+                 const totalMoney = (stats.total_payout || 0) + (stats.active_bounty || 0);
+                 stats.platform_revenue = totalMoney * 0.05;
+
                  res.json(stats);
             });
         });
@@ -106,6 +111,27 @@ app.post('/api/features/:id/vote', (req, res) => {
         return;
     }
     res.json({ message: 'Voted', changes: this.changes });
+  });
+});
+
+// Boost a feature (Simulated Payment)
+app.post('/api/features/:id/boost', (req, res) => {
+  const { id } = req.params;
+  // In a real app, we would verify payment here.
+  // For this simulation, we just mark it as boosted.
+
+  const sql = 'UPDATE features SET is_boosted = 1 WHERE id = ?';
+
+  db.run(sql, id, function (err) {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    if (this.changes === 0) {
+        res.status(404).json({ error: 'Feature not found' });
+        return;
+    }
+    res.json({ message: 'Boosted', changes: this.changes });
   });
 });
 
