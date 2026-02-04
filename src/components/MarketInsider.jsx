@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { X, TrendingUp, AlertTriangle, DollarSign, Activity, BarChart3 } from 'lucide-react';
+import { X, TrendingUp, AlertTriangle, Activity } from 'lucide-react';
 
 const MarketInsider = ({ features, onClose }) => {
   const stats = useMemo(() => {
