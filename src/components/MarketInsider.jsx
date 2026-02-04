@@ -3,7 +3,7 @@ import { X, TrendingUp, AlertTriangle, DollarSign, Activity, BarChart3 } from 'l
 
 const MarketInsider = ({ features, onClose }) => {
   const stats = useMemo(() => {
-    const totalVolume = features.reduce((acc, f) => acc + (f.pledged_amount || 0), 0);
+    const totalVolume = features.filter(f => f.status !== 'live').reduce((acc, f) => acc + (f.pledged_amount || 0), 0);
     const activeFeatures = features.filter(f => f.status !== 'live').length;
     const undervalued = features
       .filter(f => f.votes >= 2 && (f.pledged_amount || 0) < 50 && f.status !== 'live')
