@@ -106,7 +106,7 @@ const MarketInsider = ({ features, onClose }) => {
               {stats.topMovers.map((feature, idx) => (
                 <div key={feature.id} className="flex items-center justify-between p-3 border-b border-gray-800 last:border-0">
                    <div className="flex items-center gap-3">
-                     <span className="font-mono text-gray-600 text-sm">0{idx + 1}</span>
+                     <span className="font-mono text-gray-600 text-sm">{String(idx + 1).padStart(2, '0')}</span>
                      <span className="text-gray-300 font-medium truncate max-w-[200px]">{feature.title}</span>
                    </div>
                    <div className="flex items-center gap-4">
