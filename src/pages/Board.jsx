@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap } from 'lucide-react';
+import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap, Share2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
@@ -133,6 +133,21 @@ const Board = () => {
       }, 800);
   };
 
+  const handleReferral = () => {
+      // Simulation of referral link generation
+      const code = Math.random().toString(36).substring(7).toUpperCase();
+      navigator.clipboard.writeText(`https://codebounty.app?ref=${code}`);
+
+      confetti({
+          particleCount: 50,
+          spread: 40,
+          origin: { x: 0.9, y: 0.1 },
+          colors: ['#A855F7', '#D8B4FE'] // Purple
+      });
+
+      alert(`Link copied! Share to earn 1% commissions.\nRef Code: ${code}`);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newFeature.title.trim()) return;
@@ -190,7 +205,14 @@ const Board = () => {
           <h1 className="text-2xl font-bold text-gray-900">Open Bounties</h1>
           <p className="text-gray-500">Fund features you need. Hunters build what you fund.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+            <button
+            onClick={handleReferral}
+            className="inline-flex items-center px-4 py-2 border border-purple-200 shadow-sm text-sm font-bold rounded-md text-purple-700 bg-purple-50 hover:bg-purple-100 focus:outline-none"
+            >
+            <Share2 className="w-4 h-4 mr-2" />
+            Refer & Earn
+            </button>
             <button
             onClick={handleMysteryBounty}
             className="inline-flex items-center px-4 py-2 border border-emerald-200 shadow-sm text-sm font-bold rounded-md text-emerald-700 bg-emerald-50 hover:bg-emerald-100 focus:outline-none animate-pulse-gold"
