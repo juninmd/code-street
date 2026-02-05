@@ -3,12 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap, Share2, BarChart2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import MarketInsider from '../components/MarketInsider';
+import ShareBountyModal from '../components/ShareBountyModal';
 
 const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
 
 const Board = () => {
   const navigate = useNavigate();
   const [showInsider, setShowInsider] = useState(false);
+  const [shareModalFeature, setShareModalFeature] = useState(null);
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -272,6 +274,7 @@ const Board = () => {
       </div>
 
       {showInsider && <MarketInsider features={features} onClose={() => setShowInsider(false)} />}
+      {shareModalFeature && <ShareBountyModal feature={shareModalFeature} onClose={() => setShareModalFeature(null)} />}
 
       {/* Suggestion Form */}
       {showForm && (
@@ -430,8 +433,21 @@ const Board = () => {
                             Boost $10
                         </button>
                     )}
-                    <div className="flex items-center text-gray-400">
-                        <MessageSquare className="w-5 h-5 mr-1" />
+                    <div className="flex items-center gap-2">
+                         <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShareModalFeature(feature);
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                            title="Share Asset Card"
+                        >
+                            <Share2 className="w-4 h-4" />
+                        </button>
+                        <div className="flex items-center text-gray-400">
+                            <MessageSquare className="w-5 h-5 mr-1" />
+                        </div>
                     </div>
                 </div>
               </div>

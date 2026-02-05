@@ -18,7 +18,8 @@ test('MarketInsider renders correctly with stats', () => {
     expect(screen.getByText('Market Insider')).toBeInTheDocument();
 
     // Check Market Volume
-    expect(screen.getByText('$1,510')).toBeInTheDocument();
+    // Logic excludes 'live' status (1000). So 10 + 500 = 510.
+    expect(screen.getByText('$510')).toBeInTheDocument();
 
     // Check features appear. Since they might appear multiple times (Undervalued + Top Movers), we use getAllByText
     const gems = screen.getAllByText('Undervalued Gem');
