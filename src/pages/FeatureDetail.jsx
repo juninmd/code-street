@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronUp, ArrowLeft, MessageSquare, Send, DollarSign, Briefcase } from 'lucide-react';
+import { ChevronUp, ArrowLeft, MessageSquare, Send, DollarSign, Briefcase, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import confetti from 'canvas-confetti';
+import ShareBountyModal from '../components/ShareBountyModal';
 
 const FeatureDetail = () => {
   const { id } = useParams();
@@ -14,6 +15,7 @@ const FeatureDetail = () => {
   const [pledgeAmount, setPledgeAmount] = useState('');
   const [isPledging, setIsPledging] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false); // Simple client-side toggle for demo
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     // Parallel fetch feature and comments
@@ -148,16 +150,25 @@ const FeatureDetail = () => {
                     <span className="text-lg font-bold">{feature.votes}</span>
                   </button>
                   <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h1 className="text-2xl font-bold text-gray-900">{feature.title}</h1>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                feature.status === 'live' ? 'bg-green-100 text-green-800' :
-                                feature.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                                feature.status === 'planned' ? 'bg-blue-100 text-blue-800' :
-                                'bg-gray-100 text-gray-800'
-                            }`}>
-                                {feature.status.replace('_', ' ')}
-                        </span>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-bold text-gray-900">{feature.title}</h1>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    feature.status === 'live' ? 'bg-green-100 text-green-800' :
+                                    feature.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                                    feature.status === 'planned' ? 'bg-blue-100 text-blue-800' :
+                                    'bg-gray-100 text-gray-800'
+                                }`}>
+                                    {feature.status.replace('_', ' ')}
+                            </span>
+                        </div>
+                        <button
+                            onClick={() => setShowShareModal(true)}
+                            className="inline-flex items-center px-3 py-1.5 border border-emerald-200 shadow-sm text-xs font-bold rounded-md text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                        >
+                            <Share2 className="w-4 h-4 mr-1.5" />
+                            Share Asset Card
+                        </button>
                       </div>
                       <p className="text-gray-600 text-lg leading-relaxed">{feature.description}</p>
 
@@ -241,6 +252,8 @@ const FeatureDetail = () => {
               </div>
           </div>
       </div>
+
+      {showShareModal && <ShareBountyModal feature={feature} onClose={() => setShowShareModal(false)} />}
 
       {/* Comments Section */}
       <div className="max-w-2xl mx-auto">
