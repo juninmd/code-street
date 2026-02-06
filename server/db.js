@@ -68,8 +68,24 @@ db.serialize(() => {
         }
     });
 
+    // Pledges Table (Transaction History)
+    db.run(`CREATE TABLE IF NOT EXISTS pledges (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        feature_id INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE CASCADE
+    )`, (err) => {
+        if (err) {
+            console.error('Error creating pledges table', err.message);
+        } else {
+            console.log('Pledges table ready.');
+        }
+    });
+
     // Indexes for performance
     db.run('CREATE INDEX IF NOT EXISTS idx_features_status ON features(status)');
+    db.run('CREATE INDEX IF NOT EXISTS idx_pledges_feature_id ON pledges(feature_id)');
     db.run('CREATE INDEX IF NOT EXISTS idx_features_category ON features(category)');
     db.run('CREATE INDEX IF NOT EXISTS idx_features_is_boosted ON features(is_boosted)');
 });
