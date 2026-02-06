@@ -4,12 +4,14 @@ import { ChevronUp, ArrowLeft, MessageSquare, Send, DollarSign, Briefcase, Share
 import { format } from 'date-fns';
 import confetti from 'canvas-confetti';
 import ShareBountyModal from '../components/ShareBountyModal';
+import PriceChart from '../components/PriceChart';
 
 const FeatureDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [feature, setFeature] = useState(null);
   const [comments, setComments] = useState([]);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [pledgeAmount, setPledgeAmount] = useState('');
@@ -22,13 +24,15 @@ const FeatureDetail = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [featRes, commRes] = await Promise.all([
+        const [featRes, commRes, histRes] = await Promise.all([
           fetch('/api/features'),
-          fetch(`/api/features/${id}/comments`)
+          fetch(`/api/features/${id}/comments`),
+          fetch(`/api/features/${id}/history`)
         ]);
 
         const featJson = await featRes.json();
         const commJson = await commRes.json();
+        const histJson = await histRes.json();
 
         const found = featJson.data.find(f => f.id === parseInt(id));
         if (found) {
@@ -37,6 +41,7 @@ const FeatureDetail = () => {
             // Handle 404
         }
         setComments(commJson.data);
+        setHistory(histJson.data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -121,6 +126,15 @@ const FeatureDetail = () => {
                   colors: ['#10B981', '#FFD700'] // Emerald and Gold
               });
               setFeature(prev => ({ ...prev, pledged_amount: (prev.pledged_amount || 0) + parseFloat(pledgeAmount) }));
+
+              // Optimistically update history (optional, or just refetch)
+              const newPledge = {
+                  id: Date.now(), // temporary ID
+                  amount: parseFloat(pledgeAmount),
+                  created_at: new Date().toISOString()
+              };
+              setHistory(prev => [...prev, newPledge]);
+
               setPledgeAmount('');
           }
       } catch (err) {
@@ -171,6 +185,11 @@ const FeatureDetail = () => {
                         </button>
                       </div>
                       <p className="text-gray-600 text-lg leading-relaxed">{feature.description}</p>
+
+                      {/* Price History Chart */}
+                      <div className="mt-6">
+                        <PriceChart history={history} />
+                      </div>
 
                       {/* Pledge Section */}
                       <div className="mt-6 p-5 bg-emerald-50 border border-emerald-100 rounded-xl">

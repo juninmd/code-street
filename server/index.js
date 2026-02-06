@@ -60,6 +60,12 @@ app.post('/api/features', async (req, res) => {
 
   try {
     const { lastID } = await dbRun(sql, params);
+
+    // If there was an initial pledge, record it in history
+    if (pledge > 0) {
+        await dbRun('INSERT INTO pledges (feature_id, amount) VALUES (?, ?)', [lastID, pledge]);
+    }
+
     const row = await dbGet('SELECT * FROM features WHERE id = ?', [lastID]);
     res.json({ message: 'Feature created', data: row });
   } catch (err) {
@@ -134,10 +140,16 @@ app.post('/api/features/:id/pledge', async (req, res) => {
       return;
   }
 
-  const sql = 'UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?';
+  const sqlFeature = 'UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?';
+  const sqlPledge = 'INSERT INTO pledges (feature_id, amount) VALUES (?, ?)';
 
   try {
-    const { changes } = await dbRun(sql, [amount, id]);
+    // 1. Record the pledge transaction
+    await dbRun(sqlPledge, [id, amount]);
+
+    // 2. Update the total amount
+    const { changes } = await dbRun(sqlFeature, [amount, id]);
+
     if (changes === 0) {
         res.status(404).json({ error: 'Feature not found' });
         return;
@@ -146,6 +158,19 @@ app.post('/api/features/:id/pledge', async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// Get pledge history for a feature
+app.get('/api/features/:id/history', async (req, res) => {
+    const { id } = req.params;
+    const sql = 'SELECT * FROM pledges WHERE feature_id = ? ORDER BY created_at ASC';
+
+    try {
+        const rows = await dbAll(sql, [id]);
+        res.json({ data: rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Update status (Admin)

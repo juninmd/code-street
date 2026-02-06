@@ -5,6 +5,8 @@ import confetti from 'canvas-confetti';
 const AdminWealth = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
+  const [transferred, setTransferred] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -22,30 +24,41 @@ const AdminWealth = () => {
   }, []);
 
   const handleCashOut = () => {
-    const duration = 3000;
-    const end = Date.now() + duration;
+    if (stats?.platform_revenue <= 0) return;
 
-    const frame = () => {
-      confetti({
-        particleCount: 5,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ['#10B981', '#FFD700']
-      });
-      confetti({
-        particleCount: 5,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ['#10B981', '#FFD700']
-      });
+    setProcessing(true);
 
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    };
-    frame();
+    // Simulate Bank Transfer Delay
+    setTimeout(() => {
+        setProcessing(false);
+        setTransferred(true);
+        setStats(prev => ({ ...prev, platform_revenue: 0 }));
+
+        const duration = 3000;
+        const end = Date.now() + duration;
+
+        const frame = () => {
+          confetti({
+            particleCount: 5,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 },
+            colors: ['#10B981', '#FFD700']
+          });
+          confetti({
+            particleCount: 5,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 },
+            colors: ['#10B981', '#FFD700']
+          });
+
+          if (Date.now() < end) {
+            requestAnimationFrame(frame);
+          }
+        };
+        frame();
+    }, 2000);
   };
 
   if (loading) return <div className="p-8 text-center">Loading Wealth Data...</div>;
@@ -121,15 +134,45 @@ const AdminWealth = () => {
       <div className="bg-gray-900 rounded-2xl p-8 text-center relative overflow-hidden">
          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
          <div className="relative z-10">
-            <h3 className="text-2xl font-bold text-white mb-4">Ready to withdraw funds?</h3>
-            <p className="text-gray-400 mb-6 max-w-lg mx-auto">Transfer your platform fees to your connected bank account. (Simulation)</p>
-            <button
-                onClick={handleCashOut}
-                className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-bold rounded-full shadow-sm text-emerald-900 bg-emerald-400 hover:bg-emerald-300 focus:outline-none transform hover:-translate-y-1 transition-all"
-            >
-                <DollarSign className="w-6 h-6 mr-2" />
-                CASH OUT NOW
-            </button>
+            {transferred ? (
+                <div className="animate-in fade-in zoom-in duration-300">
+                    <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
+                        <DollarSign className="h-8 w-8 text-green-600" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2">Transfer Successful!</h3>
+                    <p className="text-emerald-400 font-mono">Funds have been sent to your account.</p>
+                    <button
+                        onClick={() => setTransferred(false)}
+                        className="mt-6 text-gray-400 text-sm hover:text-white underline"
+                    >
+                        Return to Dashboard
+                    </button>
+                </div>
+            ) : (
+                <>
+                    <h3 className="text-2xl font-bold text-white mb-4">Ready to withdraw funds?</h3>
+                    <p className="text-gray-400 mb-6 max-w-lg mx-auto">Transfer your platform fees to your connected bank account.</p>
+                    <button
+                        onClick={handleCashOut}
+                        disabled={processing || revenue <= 0}
+                        className={`inline-flex items-center px-8 py-4 border border-transparent text-lg font-bold rounded-full shadow-sm text-emerald-900 bg-emerald-400 hover:bg-emerald-300 focus:outline-none transform transition-all ${
+                            processing || revenue <= 0 ? 'opacity-50 cursor-not-allowed' : 'hover:-translate-y-1'
+                        }`}
+                    >
+                        {processing ? (
+                            <>Processing Transfer...</>
+                        ) : (
+                            <>
+                                <DollarSign className="w-6 h-6 mr-2" />
+                                CASH OUT NOW
+                            </>
+                        )}
+                    </button>
+                    {revenue <= 0 && !processing && (
+                        <p className="mt-2 text-xs text-red-400">No funds available to withdraw.</p>
+                    )}
+                </>
+            )}
          </div>
       </div>
     </div>
