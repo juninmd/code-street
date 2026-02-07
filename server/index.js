@@ -47,7 +47,7 @@ app.get('/api/features', async (req, res) => {
 
 // Create a new feature
 app.post('/api/features', async (req, res) => {
-  const { title, description, category, initial_pledge } = req.body;
+  const { title, description, category, initial_pledge, deadline } = req.body;
   if (!title) {
     res.status(400).json({ error: 'Title is required' });
     return;
@@ -55,8 +55,8 @@ app.post('/api/features', async (req, res) => {
 
   const pledge = (initial_pledge && !isNaN(initial_pledge)) ? parseFloat(initial_pledge) : 0;
 
-  const sql = 'INSERT INTO features (title, description, category, pledged_amount) VALUES (?, ?, ?, ?)';
-  const params = [title, description || '', category || 'feature', pledge];
+  const sql = 'INSERT INTO features (title, description, category, pledged_amount, deadline) VALUES (?, ?, ?, ?, ?)';
+  const params = [title, description || '', category || 'feature', pledge, deadline || null];
 
   try {
     const { lastID } = await dbRun(sql, params);
@@ -76,19 +76,22 @@ app.post('/api/features', async (req, res) => {
 // Get Platform Stats
 app.get('/api/stats', async (req, res) => {
     try {
-        const [payoutRow, activeRow, topCategoryRow] = await Promise.all([
+        const [payoutRow, activeRow, topCategoryRow, burnedRow] = await Promise.all([
             dbGet("SELECT SUM(pledged_amount) as val FROM features WHERE status = 'live'"),
             dbGet("SELECT SUM(pledged_amount) as val FROM features WHERE status != 'live'"),
-            dbGet("SELECT category, SUM(pledged_amount) as total FROM features GROUP BY category ORDER BY total DESC LIMIT 1")
+            dbGet("SELECT category, SUM(pledged_amount) as total FROM features GROUP BY category ORDER BY total DESC LIMIT 1"),
+            dbGet("SELECT SUM(pledged_amount) as val FROM features WHERE status != 'live' AND deadline < datetime('now')")
         ]);
 
         const stats = {};
         stats.total_payout = payoutRow && payoutRow.val ? payoutRow.val : 0;
         stats.active_bounty = activeRow && activeRow.val ? activeRow.val : 0;
         stats.top_category = topCategoryRow ? topCategoryRow.category : 'N/A';
+        stats.burned_amount = burnedRow && burnedRow.val ? burnedRow.val : 0;
 
         const totalMoney = (stats.total_payout || 0) + (stats.active_bounty || 0);
-        stats.platform_revenue = totalMoney * 0.05;
+        // Revenue = 5% of everything + 100% of Burned items
+        stats.platform_revenue = (totalMoney * 0.05) + stats.burned_amount;
 
         res.json(stats);
     } catch (err) {
@@ -230,6 +233,33 @@ app.post('/api/features/:id/comments', async (req, res) => {
         res.json({ message: 'Comment added', data: row });
     } catch (err) {
         res.status(400).json({ error: err.message });
+    }
+});
+
+// Panic Button (Extend Deadline)
+app.post('/api/features/:id/panic', async (req, res) => {
+    const { id } = req.params;
+    const FEE = 5;
+
+    try {
+        const feature = await dbGet('SELECT * FROM features WHERE id = ?', [id]);
+        if (!feature) {
+            res.status(404).json({ error: 'Feature not found' });
+            return;
+        }
+
+        const currentDeadline = feature.deadline ? new Date(feature.deadline) : new Date();
+        const newDeadline = new Date(currentDeadline.getTime() + 24 * 60 * 60 * 1000);
+
+        // Update deadline and pledged amount
+        await dbRun('UPDATE features SET deadline = ?, pledged_amount = pledged_amount + ? WHERE id = ?', [newDeadline.toISOString(), FEE, id]);
+
+        // Record the fee
+        await dbRun('INSERT INTO pledges (feature_id, amount) VALUES (?, ?)', [id, FEE]);
+
+        res.json({ message: 'Panic Mode Activated! Deadline extended by 24h.', new_deadline: newDeadline });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
