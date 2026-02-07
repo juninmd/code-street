@@ -70,8 +70,8 @@ const AdminWealth = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900">Admin Wealth Dashboard</h1>
-        <p className="mt-2 text-gray-600">Monitor your platform's financial performance.</p>
+        <h1 className="text-3xl font-extrabold text-gray-900">Casino House Dashboard</h1>
+        <p className="mt-2 text-gray-600">Monitor the burned wagers and panic fees.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -82,18 +82,24 @@ const AdminWealth = () => {
               <Wallet className="w-8 h-8 text-emerald-300" />
             </div>
             <span className="bg-emerald-500/20 text-emerald-100 text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider">
-              Net Profit
+              House Profit
             </span>
           </div>
           <div className="mb-2">
-            <p className="text-emerald-200 text-sm font-medium uppercase tracking-wider">Total Platform Revenue</p>
+            <p className="text-emerald-200 text-sm font-medium uppercase tracking-wider">Total Burned + Fees</p>
             <h2 className="text-5xl font-extrabold tracking-tight">
               ${revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h2>
           </div>
-          <div className="mt-4 pt-4 border-t border-emerald-600/50 flex items-center text-emerald-100 text-sm">
-            <TrendingUp className="w-4 h-4 mr-1" />
-            <span>+12% from last week</span>
+          <div className="mt-4 pt-4 border-t border-emerald-600/50 flex flex-col gap-1 text-emerald-100 text-sm">
+             <div className="flex justify-between">
+                <span>Burned Wagers:</span>
+                <span className="font-bold">${(stats?.burned_amount || 0).toLocaleString()}</span>
+             </div>
+             <div className="flex justify-between">
+                <span>Panic Fees / Tax:</span>
+                <span className="font-bold">${(revenue - (stats?.burned_amount || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+             </div>
           </div>
         </div>
 

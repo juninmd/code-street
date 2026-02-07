@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap, Share2, BarChart2 } from 'lucide-react';
+import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap, Share2, BarChart2, Clock, AlertTriangle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import MarketInsider from '../components/MarketInsider';
 import ShareBountyModal from '../components/ShareBountyModal';
@@ -16,7 +16,7 @@ const Board = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('value'); // Default to value for bounties
   const [showForm, setShowForm] = useState(false);
-  const [newFeature, setNewFeature] = useState({ title: '', description: '', category: 'Frontend' });
+  const [newFeature, setNewFeature] = useState({ title: '', description: '', category: 'Frontend', deadline: '' });
   const [initialPledge, setInitialPledge] = useState('');
   const [stats, setStats] = useState({ total_payout: 0, active_bounty: 0 });
   const [submitting, setSubmitting] = useState(false);
@@ -119,6 +119,34 @@ const Board = () => {
       }
   };
 
+  const handlePanic = async (e, id) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if(!window.confirm("PANIC MODE: Extend deadline by 24h for $5 fee?")) return;
+
+      try {
+          const res = await fetch(`/api/features/${id}/panic`, { method: 'POST' });
+          if(res.ok) {
+              const json = await res.json();
+              confetti({
+                  particleCount: 50,
+                  spread: 180,
+                  colors: ['#EF4444', '#F87171'] // Red
+              });
+              // Optimistic update
+              setFeatures(features.map(f => f.id === id ? {
+                  ...f,
+                  deadline: json.new_deadline,
+                  pledged_amount: (f.pledged_amount || 0) + 5
+              } : f));
+              fetchStats();
+          }
+      } catch (err) {
+          alert("Panic failed. You are doomed.");
+      }
+  };
+
   const handleMysteryBounty = () => {
       const available = features.filter(f => f.status === 'under_review' || f.status === 'planned');
       if (available.length === 0) return;
@@ -172,12 +200,12 @@ const Board = () => {
       if (selectedCategory === 'All' || selectedCategory.toLowerCase() === json.data.category) {
           setFeatures([json.data, ...features]);
       }
-      setNewFeature({ title: '', description: '', category: 'Frontend' });
+      setNewFeature({ title: '', description: '', category: 'Frontend', deadline: '' });
       setInitialPledge('');
       setShowForm(false);
       fetchStats();
     } catch (err) {
-      alert('Error creating feature');
+      alert('Error creating wager');
     } finally {
       setSubmitting(false);
     }
@@ -206,8 +234,8 @@ const Board = () => {
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Open Bounties</h1>
-          <p className="text-gray-500">Fund features you need. Hunters build what you fund.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Live Wagers</h1>
+          <p className="text-gray-500">Bet on your focus. Ship before the deadline or burn your pledge.</p>
         </div>
         <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             <button
@@ -236,7 +264,7 @@ const Board = () => {
             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none"
             >
             <Plus className="w-4 h-4 mr-2" />
-            Post Bounty
+            Place Wager
             </button>
         </div>
       </div>
@@ -279,15 +307,15 @@ const Board = () => {
       {/* Suggestion Form */}
       {showForm && (
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 animate-fade-in-down">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Post New Bounty</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Place New Wager</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Title</label>
+              <label className="block text-sm font-medium text-gray-700">Goal Title</label>
               <input
                 type="text"
                 required
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"
-                placeholder="What needs to be built?"
+                placeholder="What will you ship?"
                 value={newFeature.title}
                 onChange={e => setNewFeature({...newFeature, title: e.target.value})}
               />
@@ -304,19 +332,31 @@ const Board = () => {
                     ))}
                 </select>
             </div>
+
+             <div>
+                <label className="block text-sm font-medium text-gray-700">Deadline</label>
+                <input
+                    type="datetime-local"
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"
+                    value={newFeature.deadline}
+                    onChange={e => setNewFeature({...newFeature, deadline: e.target.value})}
+                />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700">Description</label>
               <textarea
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"
                 rows={3}
-                placeholder="Requirements, acceptance criteria..."
+                placeholder="Definition of Done..."
                 value={newFeature.description}
                 onChange={e => setNewFeature({...newFeature, description: e.target.value})}
               />
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700">Initial Pledge ($)</label>
+                <label className="block text-sm font-medium text-gray-700">Wager Amount ($)</label>
                 <div className="mt-1 flex rounded-md shadow-sm">
                     <div className="relative flex-grow focus-within:z-10">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -340,7 +380,7 @@ const Board = () => {
                         <span>Ask AI Estimate</span>
                     </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">Seed the bounty to attract hunters faster.</p>
+                <p className="mt-1 text-xs text-gray-500">You lose this if you miss the deadline.</p>
             </div>
 
             <div className="flex justify-end gap-2">
@@ -356,7 +396,7 @@ const Board = () => {
                     disabled={submitting}
                     className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50"
                 >
-                    {submitting ? 'Post Bounty' : 'Post Bounty'}
+                    {submitting ? 'Place Wager' : 'Place Wager'}
                 </button>
             </div>
           </form>
@@ -420,10 +460,40 @@ const Board = () => {
                                 {feature.pledged_amount}
                             </span>
                         )}
+                        {feature.deadline && feature.status !== 'live' && (() => {
+                            const diff = new Date(feature.deadline) - new Date();
+                            const isBurned = diff <= 0;
+                            const isLow = diff < 24 * 60 * 60 * 1000;
+
+                            if (isBurned) {
+                                return (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white animate-pulse">
+                                        🔥 BURNED
+                                    </span>
+                                );
+                            }
+
+                            const hours = Math.floor(diff / (1000 * 60 * 60));
+                            return (
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${isLow ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {hours}h left
+                                </span>
+                            );
+                        })()}
                     </div>
                   <p className="text-gray-500 line-clamp-2">{feature.description}</p>
                 </div>
                 <div className="hidden sm:flex flex-col items-end gap-2">
+                    {feature.deadline && new Date(feature.deadline) > new Date() && new Date(feature.deadline) - new Date() < 24 * 60 * 60 * 1000 && feature.status !== 'live' && (
+                        <button
+                            onClick={(e) => handlePanic(e, feature.id)}
+                            className="text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded border border-red-200 hover:border-red-300 transition-colors flex items-center animate-pulse"
+                        >
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            PANIC ($5)
+                        </button>
+                    )}
                     {!feature.is_boosted && (
                         <button
                             onClick={(e) => handleBoost(e, feature.id)}

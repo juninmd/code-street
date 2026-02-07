@@ -26,7 +26,9 @@ db.serialize(() => {
         status TEXT DEFAULT 'under_review',
         category TEXT DEFAULT 'feature',
         pledged_amount REAL DEFAULT 0,
-            is_boosted INTEGER DEFAULT 0,
+        is_boosted INTEGER DEFAULT 0,
+        deadline DATETIME,
+        is_burned INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`, (err) => {
         if (err) {
@@ -36,18 +38,32 @@ db.serialize(() => {
             // Add pledged_amount column if it doesn't exist
             db.run('ALTER TABLE features ADD COLUMN pledged_amount REAL DEFAULT 0', (err) => {
                 if (err && !err.message.includes('duplicate column')) {
-                    console.error('Error adding pledged_amount column', err.message);
-                } else {
-                    console.log('pledged_amount column ready.');
+                    // console.error('Error adding pledged_amount column', err.message);
                 }
             });
 
             // Add is_boosted column if it doesn't exist
             db.run('ALTER TABLE features ADD COLUMN is_boosted INTEGER DEFAULT 0', (err) => {
                 if (err && !err.message.includes('duplicate column')) {
-                    console.error('Error adding is_boosted column', err.message);
+                    // console.error('Error adding is_boosted column', err.message);
+                }
+            });
+
+            // Add deadline column if it doesn't exist
+            db.run('ALTER TABLE features ADD COLUMN deadline DATETIME', (err) => {
+                if (err && !err.message.includes('duplicate column')) {
+                    console.error('Error adding deadline column', err.message);
                 } else {
-                    console.log('is_boosted column ready.');
+                    console.log('deadline column ready.');
+                }
+            });
+
+            // Add is_burned column if it doesn't exist
+            db.run('ALTER TABLE features ADD COLUMN is_burned INTEGER DEFAULT 0', (err) => {
+                if (err && !err.message.includes('duplicate column')) {
+                    console.error('Error adding is_burned column', err.message);
+                } else {
+                    console.log('is_burned column ready.');
                 }
             });
         }

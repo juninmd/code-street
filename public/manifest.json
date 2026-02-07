@@ -1,7 +1,7 @@
 {
-  "name": "CodeBounty",
-  "short_name": "CodeBounty",
-  "description": "Feature Futures Exchange",
+  "name": "FocusBet: The Productivity Casino",
+  "short_name": "FocusBet",
+  "description": "Bet on your own productivity. Ship or Burn.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
