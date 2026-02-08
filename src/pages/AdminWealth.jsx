@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, Users, Activity, Wallet, PieChart } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Activity, Building, PieChart } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 const AdminWealth = () => {
@@ -70,8 +70,8 @@ const AdminWealth = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-extrabold text-gray-900">Casino House Dashboard</h1>
-        <p className="mt-2 text-gray-600">Monitor the burned wagers and panic fees.</p>
+        <h1 className="text-3xl font-extrabold text-gray-900">Exchange Clearing House</h1>
+        <p className="mt-2 text-gray-600">Monitor liquidated assets and high-frequency trading fees.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -79,25 +79,25 @@ const AdminWealth = () => {
         <div className="bg-gradient-to-br from-emerald-900 to-emerald-700 rounded-2xl p-6 text-white shadow-xl transform hover:scale-105 transition-transform duration-300">
           <div className="flex justify-between items-start mb-4">
             <div className="p-3 bg-emerald-800/50 rounded-lg">
-              <Wallet className="w-8 h-8 text-emerald-300" />
+              <Building className="w-8 h-8 text-emerald-300" />
             </div>
             <span className="bg-emerald-500/20 text-emerald-100 text-xs font-bold px-2 py-1 rounded-full uppercase tracking-wider">
-              House Profit
+              Exchange Revenue
             </span>
           </div>
           <div className="mb-2">
-            <p className="text-emerald-200 text-sm font-medium uppercase tracking-wider">Total Burned + Fees</p>
+            <p className="text-emerald-200 text-sm font-medium uppercase tracking-wider">Total Liquidated + Fees</p>
             <h2 className="text-5xl font-extrabold tracking-tight">
               ${revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </h2>
           </div>
           <div className="mt-4 pt-4 border-t border-emerald-600/50 flex flex-col gap-1 text-emerald-100 text-sm">
              <div className="flex justify-between">
-                <span>Burned Wagers:</span>
+                <span>Liquidated Assets:</span>
                 <span className="font-bold">${(stats?.burned_amount || 0).toLocaleString()}</span>
              </div>
              <div className="flex justify-between">
-                <span>Panic Fees / Tax:</span>
+                <span>HFT Fees:</span>
                 <span className="font-bold">${(revenue - (stats?.burned_amount || 0)).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
              </div>
           </div>

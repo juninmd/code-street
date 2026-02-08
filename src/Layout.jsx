@@ -36,7 +36,7 @@ const Layout = () => {
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <span className="text-xl font-bold text-emerald-600 tracking-tight">CodeBounty</span>
+                <span className="text-xl font-bold text-emerald-600 tracking-tight">CodeStreet</span>
               </div>
               <div className="ml-6 flex space-x-8">
                 <NavLink
@@ -100,7 +100,7 @@ const Layout = () => {
 
       {/* Mobile Top Bar */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 sm:hidden flex items-center justify-center h-14">
-        <span className="text-lg font-bold text-emerald-600 tracking-tight">CodeBounty</span>
+        <span className="text-lg font-bold text-emerald-600 tracking-tight">CodeStreet</span>
       </nav>
 
       {/* Main Content */}
@@ -116,7 +116,7 @@ const Layout = () => {
               <Download className="w-5 h-5" />
             </div>
             <div>
-              <p className="font-bold text-sm">Install CodeBounty</p>
+              <p className="font-bold text-sm">Install CodeStreet</p>
               <p className="text-emerald-200 text-xs">Add to home screen for quick access</p>
             </div>
           </div>
@@ -191,7 +191,7 @@ const Layout = () => {
       {/* Desktop Footer */}
       <footer className="bg-white border-t border-gray-200 mt-auto hidden sm:block">
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-gray-400">&copy; {new Date().getFullYear()} CodeBounty. All rights reserved.</p>
+          <p className="text-center text-sm text-gray-400">&copy; {new Date().getFullYear()} CodeStreet. All rights reserved.</p>
         </div>
       </footer>
     </div>

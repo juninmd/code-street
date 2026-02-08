@@ -9,10 +9,10 @@ const ShareBountyModal = ({ feature, onClose }) => {
   const ticker = feature.title ? feature.title.substring(0, 4).toUpperCase() : 'FEAT';
   const price = (feature.pledged_amount || 0).toLocaleString();
   const volume = feature.votes || 0;
-  const shareUrl = `https://codebounty.app/feature/${feature.id}`; // Simulated URL
+  const shareUrl = `https://codestreet.app/feature/${feature.id}`; // Simulated URL
 
   const handleCopy = () => {
-    const text = `🚀 I just backed $${ticker} on CodeBounty!\n\nAsset: ${feature.title}\nIPO Price: $${price}\nVolume: ${volume} Votes\n\nInvest in this feature here: ${shareUrl} #CodeBounty #FeatureFi`;
+    const text = `🚀 I just backed $${ticker} on CodeStreet!\n\nAsset: ${feature.title}\nIPO Price: $${price}\nVolume: ${volume} Votes\n\nInvest in this feature here: ${shareUrl} #CodeStreet #FeatureFi`;
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
