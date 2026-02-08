@@ -3,7 +3,7 @@
 This file serves as a context and instruction guide for AI agents working on this repository.
 
 ## Project Context
-**CodeBounty: The Feature Futures Exchange.**
+**CodeStreet: The Feature Futures Exchange.**
 
 This is not just a marketplace; it is a high-velocity trading floor for software features.
 - **The Goal:** Maximize Platform Revenue (5% of all volume).

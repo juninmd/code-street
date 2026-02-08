@@ -1,7 +1,7 @@
 {
-  "name": "FocusBet: The Productivity Casino",
-  "short_name": "FocusBet",
-  "description": "Bet on your own productivity. Ship or Burn.",
+  "name": "CodeStreet: The Feature Futures Exchange",
+  "short_name": "CodeStreet",
+  "description": "The Feature Futures Exchange. Ship or Short.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

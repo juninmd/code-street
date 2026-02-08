@@ -1,6 +1,6 @@
-# CodeBounty
+# CodeStreet
 
-CodeBounty is a crowdfunded marketplace where users pledge money to feature requests (Bounties) and developers can claim them.
+CodeStreet is a feature futures exchange where users pledge money to feature requests (Bounties) and developers can claim them.
 
 ## Tech Stack
 

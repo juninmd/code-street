@@ -15,7 +15,7 @@ test('MarketInsider renders correctly with stats', () => {
     render(<MarketInsider features={mockFeatures} onClose={handleClose} />);
 
     // Check Header
-    expect(screen.getByText('Market Insider')).toBeInTheDocument();
+    expect(screen.getByText(/CodeStreet Terminal_/i)).toBeInTheDocument();
 
     // Check Market Volume
     // Logic excludes 'live' status (1000). So 10 + 500 = 510.

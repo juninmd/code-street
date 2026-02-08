@@ -1,4 +1,4 @@
-# Contributing to CodeBounty
+# Contributing to CodeStreet
 
 Thank you for your interest in contributing!
 
