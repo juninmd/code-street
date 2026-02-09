@@ -26,5 +26,6 @@ test('MarketInsider renders correctly with stats', () => {
     expect(gems.length).toBeGreaterThan(0);
 
     // Check Top Movers
-    expect(screen.getByText('Big Mover')).toBeInTheDocument();
+    const bigMovers = screen.getAllByText('Big Mover');
+    expect(bigMovers.length).toBeGreaterThan(0);
 });

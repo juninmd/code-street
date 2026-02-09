@@ -51,8 +51,23 @@ const FeatureDetail = () => {
     fetchData();
   }, [id]);
 
+  const addToPortfolio = () => {
+      const current = JSON.parse(localStorage.getItem('my_portfolio') || '[]');
+      if (!current.includes(parseInt(id))) {
+          current.push(parseInt(id));
+          localStorage.setItem('my_portfolio', JSON.stringify(current));
+          // Simple notification
+          const div = document.createElement('div');
+          div.className = 'fixed bottom-20 right-4 sm:bottom-4 bg-emerald-900 text-white px-4 py-2 rounded shadow-lg animate-fade-in-up z-50 text-sm font-bold flex items-center gap-2 border border-emerald-700';
+          div.innerHTML = '<span>💼 Asset added to Portfolio</span>';
+          document.body.appendChild(div);
+          setTimeout(() => div.remove(), 3000);
+      }
+  };
+
   const handleVote = async () => {
     if (!feature) return;
+    addToPortfolio();
     // Optimistic
     setFeature({ ...feature, votes: feature.votes + 1 });
     try {
@@ -136,6 +151,7 @@ const FeatureDetail = () => {
               setHistory(prev => [...prev, newPledge]);
 
               setPledgeAmount('');
+              addToPortfolio();
           }
       } catch (err) {
           console.error(err);
