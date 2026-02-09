@@ -1,11 +1,15 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
 const db = require('./db');
 const util = require('util');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(helmet());
+app.use(morgan('dev'));
 app.use(cors());
 app.use(express.json());
 
@@ -105,7 +109,7 @@ app.post('/api/features/:id/vote', async (req, res) => {
   const sql = 'UPDATE features SET votes = votes + 1 WHERE id = ?';
 
   try {
-    const { changes } = await dbRun(sql, id);
+    const { changes } = await dbRun(sql, [id]);
     if (changes === 0) {
         res.status(404).json({ error: 'Feature not found' });
         return;
@@ -122,7 +126,7 @@ app.post('/api/features/:id/boost', async (req, res) => {
   const sql = 'UPDATE features SET is_boosted = 1 WHERE id = ?';
 
   try {
-    const { changes } = await dbRun(sql, id);
+    const { changes } = await dbRun(sql, [id]);
     if (changes === 0) {
         res.status(404).json({ error: 'Feature not found' });
         return;
