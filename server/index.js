@@ -39,7 +39,11 @@ app.get('/api/features', async (req, res) => {
 
   try {
     const rows = await dbAll(sql, params);
-    res.json({ data: rows });
+    const data = rows.map(row => ({
+        ...row,
+        hype_score: (row.votes * 10) + ((row.pledged_amount || 0) * 0.1)
+    }));
+    res.json({ data });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

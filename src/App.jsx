@@ -7,12 +7,14 @@ import Changelog from './pages/Changelog';
 import FeatureDetail from './pages/FeatureDetail';
 import HunterProfile from './pages/HunterProfile';
 import AdminWealth from './pages/AdminWealth';
+import Portfolio from './pages/Portfolio';
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Board />} />
+        <Route path="portfolio" element={<Portfolio />} />
         <Route path="roadmap" element={<Roadmap />} />
         <Route path="changelog" element={<Changelog />} />
         <Route path="feature/:id" element={<FeatureDetail />} />

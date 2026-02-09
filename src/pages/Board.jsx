@@ -67,9 +67,25 @@ const Board = () => {
       setInitialPledge(Math.ceil(estimate).toString());
   };
 
+  const addToPortfolio = (id) => {
+      const current = JSON.parse(localStorage.getItem('my_portfolio') || '[]');
+      if (!current.includes(parseInt(id))) {
+          current.push(parseInt(id));
+          localStorage.setItem('my_portfolio', JSON.stringify(current));
+          // Simple notification
+          const div = document.createElement('div');
+          div.className = 'fixed bottom-20 right-4 sm:bottom-4 bg-emerald-900 text-white px-4 py-2 rounded shadow-lg animate-fade-in-up z-50 text-sm font-bold flex items-center gap-2 border border-emerald-700';
+          div.innerHTML = '<span>💼 Asset added to Portfolio</span>';
+          document.body.appendChild(div);
+          setTimeout(() => div.remove(), 3000);
+      }
+  };
+
   const handleVote = async (e, id) => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation();
+
+    addToPortfolio(id);
 
     // Celebration
     confetti({
@@ -446,6 +462,11 @@ const Board = () => {
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 capitalize">
                             {feature.category}
                         </span>
+                        {feature.hype_score > 50 && (
+                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200" title="High Hype Score">
+                                🔥 {Math.round(feature.hype_score)}
+                             </span>
+                        )}
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                             feature.status === 'live' ? 'bg-green-100 text-green-800' :
                             feature.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
