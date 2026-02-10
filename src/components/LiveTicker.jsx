@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, Zap, Star, Activity } from 'lucide-react';
 
 const MESSAGES = [
-    { type: 'pledge', text: 'Someone pledged $50 to "Dark Mode Support"' },
-    { type: 'pledge', text: 'New pledge: $100 for "Mobile App v2"' },
-    { type: 'boost', text: '"AI Image Gen" was just Boosted to the top!' },
-    { type: 'new', text: 'New Bounty: "Integrate Stripe Payments"' },
-    { type: 'claim', text: 'Hunter @dev_alex claimed "Fix Login Bug"' },
-    { type: 'pledge', text: 'Anonymous pledged $25 to "Export to PDF"' },
-    { type: 'revenue', text: 'Platform just earned $12.50 in fees' },
+    { type: 'pledge', text: 'BIG MOVE: "Dark Mode" just secured $500 seed funding' },
+    { type: 'boost', text: 'MARKET ALERT: "Mobile App v2" is trending!' },
+    { type: 'new', text: 'IPO ALERT: "AI Cat Sitter" (AICS) listed at $10k valuation' },
+    { type: 'claim', text: 'ACQUISITION: Hunter @dev_alex acquired "Fix Login Bug"' },
+    { type: 'revenue', text: 'DIVIDENDS: Platform distributed $12.50 to holders' },
+    { type: 'pledge', text: 'WHALE ALERT: Large buy order on "Export to PDF"' },
+    { type: 'new', text: 'NEW LISTING: "Crypto Wallet" (WALT) is now live' },
 ];
 
 const LiveTicker = () => {

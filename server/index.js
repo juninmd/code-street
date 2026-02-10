@@ -51,7 +51,7 @@ app.get('/api/features', async (req, res) => {
 
 // Create a new feature
 app.post('/api/features', async (req, res) => {
-  const { title, description, category, initial_pledge, deadline } = req.body;
+  const { title, description, category, initial_pledge, deadline, ticker } = req.body;
   if (!title) {
     res.status(400).json({ error: 'Title is required' });
     return;
@@ -59,8 +59,17 @@ app.post('/api/features', async (req, res) => {
 
   const pledge = (initial_pledge && !isNaN(initial_pledge)) ? parseFloat(initial_pledge) : 0;
 
-  const sql = 'INSERT INTO features (title, description, category, pledged_amount, deadline) VALUES (?, ?, ?, ?, ?)';
-  const params = [title, description || '', category || 'feature', pledge, deadline || null];
+  let finalTicker = ticker;
+  if (!finalTicker) {
+      // Generate ticker from title (e.g. "Dark Mode" -> "DARK")
+      finalTicker = title.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+      if (finalTicker.length < 3) {
+          finalTicker = (title.toUpperCase() + "XXX").slice(0, 3);
+      }
+  }
+
+  const sql = 'INSERT INTO features (title, description, category, pledged_amount, deadline, ticker) VALUES (?, ?, ?, ?, ?, ?)';
+  const params = [title, description || '', category || 'feature', pledge, deadline || null, finalTicker];
 
   try {
     const { lastID } = await dbRun(sql, params);

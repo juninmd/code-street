@@ -4,6 +4,7 @@ import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap, Share2, BarC
 import confetti from 'canvas-confetti';
 import MarketInsider from '../components/MarketInsider';
 import ShareBountyModal from '../components/ShareBountyModal';
+import MarketHeatmap from '../components/MarketHeatmap';
 
 const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
 
@@ -16,7 +17,7 @@ const Board = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [sortBy, setSortBy] = useState('value'); // Default to value for bounties
   const [showForm, setShowForm] = useState(false);
-  const [newFeature, setNewFeature] = useState({ title: '', description: '', category: 'Frontend', deadline: '' });
+  const [newFeature, setNewFeature] = useState({ title: '', description: '', category: 'Frontend', deadline: '', ticker: '' });
   const [initialPledge, setInitialPledge] = useState('');
   const [stats, setStats] = useState({ total_payout: 0, active_bounty: 0 });
   const [submitting, setSubmitting] = useState(false);
@@ -208,7 +209,8 @@ const Board = () => {
         body: JSON.stringify({
             ...newFeature,
             category: newFeature.category.toLowerCase(),
-            initial_pledge: initialPledge
+            initial_pledge: initialPledge,
+            ticker: newFeature.ticker ? newFeature.ticker.toUpperCase() : undefined
         }),
       });
       const json = await res.json();
@@ -216,12 +218,12 @@ const Board = () => {
       if (selectedCategory === 'All' || selectedCategory.toLowerCase() === json.data.category) {
           setFeatures([json.data, ...features]);
       }
-      setNewFeature({ title: '', description: '', category: 'Frontend', deadline: '' });
+      setNewFeature({ title: '', description: '', category: 'Frontend', deadline: '', ticker: '' });
       setInitialPledge('');
       setShowForm(false);
       fetchStats();
     } catch (err) {
-      alert('Error creating wager');
+      alert('Error creating IPO');
     } finally {
       setSubmitting(false);
     }
@@ -248,10 +250,12 @@ const Board = () => {
         </div>
       </div>
 
+      <MarketHeatmap features={features} />
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Live Wagers</h1>
-          <p className="text-gray-500">Bet on your focus. Ship before the deadline or burn your pledge.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Market Overview</h1>
+          <p className="text-gray-500">Trade, Invest, and Launch new Software IPOs.</p>
         </div>
         <div className="flex gap-2 flex-wrap sm:flex-nowrap">
             <button
@@ -280,7 +284,7 @@ const Board = () => {
             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none"
             >
             <Plus className="w-4 h-4 mr-2" />
-            Place Wager
+            Launch IPO
             </button>
         </div>
       </div>
@@ -323,21 +327,34 @@ const Board = () => {
       {/* Suggestion Form */}
       {showForm && (
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 animate-fade-in-down">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Place New Wager</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Launch New IPO (Initial Project Offering)</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Goal Title</label>
-              <input
-                type="text"
-                required
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"
-                placeholder="What will you ship?"
-                value={newFeature.title}
-                onChange={e => setNewFeature({...newFeature, title: e.target.value})}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                <label className="block text-sm font-medium text-gray-700">Project Name</label>
+                <input
+                    type="text"
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"
+                    placeholder="e.g. CodeStreet"
+                    value={newFeature.title}
+                    onChange={e => setNewFeature({...newFeature, title: e.target.value})}
+                />
+                </div>
+                <div>
+                <label className="block text-sm font-medium text-gray-700">Ticker Symbol (Optional)</label>
+                <input
+                    type="text"
+                    maxLength={4}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border uppercase font-mono"
+                    placeholder="CODE"
+                    value={newFeature.ticker}
+                    onChange={e => setNewFeature({...newFeature, ticker: e.target.value.toUpperCase()})}
+                />
+                </div>
             </div>
             <div>
-                <label className="block text-sm font-medium text-gray-700">Category</label>
+                <label className="block text-sm font-medium text-gray-700">Sector</label>
                 <select
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"
                     value={newFeature.category}
@@ -372,7 +389,7 @@ const Board = () => {
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-gray-700">Wager Amount ($)</label>
+                <label className="block text-sm font-medium text-gray-700">Initial Seed Capital ($)</label>
                 <div className="mt-1 flex rounded-md shadow-sm">
                     <div className="relative flex-grow focus-within:z-10">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -393,10 +410,12 @@ const Board = () => {
                         className="-ml-px relative inline-flex items-center space-x-2 px-4 py-2 border border-gray-300 text-sm font-medium rounded-r-md text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
                     >
                         <Sparkles className="h-4 w-4 text-purple-500" />
-                        <span>Ask AI Estimate</span>
+                        <span>Ask AI Valuation</span>
                     </button>
                 </div>
-                <p className="mt-1 text-xs text-gray-500">You lose this if you miss the deadline.</p>
+                <p className="mt-1 text-xs text-gray-500">
+                    Est. Valuation: <span className="font-bold text-emerald-600">${((parseFloat(initialPledge) || 0) * 100).toLocaleString()}</span>
+                </p>
             </div>
 
             <div className="flex justify-end gap-2">
@@ -412,138 +431,107 @@ const Board = () => {
                     disabled={submitting}
                     className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50"
                 >
-                    {submitting ? 'Place Wager' : 'Place Wager'}
+                    {submitting ? 'Launch IPO' : 'Launch IPO'}
                 </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Feature List */}
-      <div className="space-y-4">
+      {/* Feature List (Table View) */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {loading ? (
-           <div className="space-y-4">
-               {[1,2,3].map(i => (
-                   <div key={i} className="bg-white p-6 rounded-lg shadow-sm animate-pulse h-24"></div>
-               ))}
-           </div>
+            <div className="p-12 text-center text-gray-400">Loading Market Data...</div>
         ) : features.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-300">
-                <p className="text-gray-500">No active bounties in this category.</p>
+             <div className="text-center py-12 bg-white">
+                <p className="text-gray-500">No active IPOs in this sector.</p>
             </div>
         ) : (
-          features
-            .sort((a, b) => {
-                if (sortBy === 'value') {
-                    // Sort by pledged amount (desc), then votes
-                    return (b.pledged_amount || 0) - (a.pledged_amount || 0) || b.votes - a.votes;
-                }
-                // Default: Sort by votes (desc), then pledged amount
-                return b.votes - a.votes || (b.pledged_amount || 0) - (a.pledged_amount || 0);
-            })
-            .map((feature) => (
-            <Link
-              key={feature.id}
-              to={`/feature/${feature.id}`}
-              className={`block bg-white hover:bg-gray-50 transition-all shadow-sm hover:shadow-md rounded-lg p-6 border ${feature.is_boosted ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-100'}`}
-            >
-              <div className="flex items-start gap-4">
-                <button
-                  onClick={(e) => handleVote(e, feature.id)}
-                  className="flex-shrink-0 flex flex-col items-center justify-center w-12 h-14 bg-emerald-50 rounded border border-emerald-200 text-emerald-600 hover:border-emerald-300 hover:text-emerald-700 transition-colors"
+        <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+            <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticker</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset</th>
+                <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sector</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price (Pledge)</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Vol (Votes)</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+            </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+            {features
+                .sort((a, b) => {
+                    if (sortBy === 'value') return (b.pledged_amount || 0) - (a.pledged_amount || 0) || b.votes - a.votes;
+                    return b.votes - a.votes || (b.pledged_amount || 0) - (a.pledged_amount || 0);
+                })
+                .map((feature) => (
+                <tr
+                    key={feature.id}
+                    onClick={() => navigate(`/feature/${feature.id}`)}
+                    className={`hover:bg-gray-50 cursor-pointer transition-colors ${feature.is_boosted ? 'bg-yellow-50/30' : ''}`}
                 >
-                  <ChevronUp className="w-5 h-5" />
-                  <span className="text-sm font-bold">{feature.votes}</span>
-                </button>
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                        {feature.is_boosted ? <Zap className="w-4 h-4 text-yellow-500 fill-yellow-500" /> : null}
-                        <h3 className="text-lg font-semibold text-gray-900 truncate">{feature.title}</h3>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 capitalize">
-                            {feature.category}
-                        </span>
-                        {feature.hype_score > 50 && (
-                             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200" title="High Hype Score">
-                                🔥 {Math.round(feature.hype_score)}
-                             </span>
-                        )}
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                            feature.status === 'live' ? 'bg-green-100 text-green-800' :
-                            feature.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-                            feature.status === 'planned' ? 'bg-blue-100 text-blue-800' :
-                            'bg-gray-100 text-gray-800'
-                        }`}>
-                            {feature.status.replace('_', ' ')}
-                        </span>
-                        {(feature.pledged_amount || 0) > 0 && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-700 border border-green-200">
-                                <DollarSign className="w-3 h-3 mr-0.5" />
-                                {feature.pledged_amount}
-                            </span>
-                        )}
-                        {feature.deadline && feature.status !== 'live' && (() => {
-                            const diff = new Date(feature.deadline) - new Date();
-                            const isBurned = diff <= 0;
-                            const isLow = diff < 24 * 60 * 60 * 1000;
-
-                            if (isBurned) {
-                                return (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-600 text-white animate-pulse">
-                                        🔥 BURNED
-                                    </span>
-                                );
-                            }
-
-                            const hours = Math.floor(diff / (1000 * 60 * 60));
-                            return (
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${isLow ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>
-                                    <Clock className="w-3 h-3 mr-1" />
-                                    {hours}h left
-                                </span>
-                            );
-                        })()}
-                    </div>
-                  <p className="text-gray-500 line-clamp-2">{feature.description}</p>
-                </div>
-                <div className="hidden sm:flex flex-col items-end gap-2">
-                    {feature.deadline && new Date(feature.deadline) > new Date() && new Date(feature.deadline) - new Date() < 24 * 60 * 60 * 1000 && feature.status !== 'live' && (
-                        <button
-                            onClick={(e) => handlePanic(e, feature.id)}
-                            className="text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded border border-red-200 hover:border-red-300 transition-colors flex items-center animate-pulse"
-                        >
-                            <AlertTriangle className="w-3 h-3 mr-1" />
-                            PANIC ($5)
-                        </button>
-                    )}
-                    {!feature.is_boosted && (
-                        <button
-                            onClick={(e) => handleBoost(e, feature.id)}
-                            className="text-xs font-bold text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50 px-2 py-1 rounded border border-transparent hover:border-yellow-200 transition-colors flex items-center"
-                        >
-                            <Zap className="w-3 h-3 mr-1" />
-                            Boost $10
-                        </button>
-                    )}
-                    <div className="flex items-center gap-2">
-                         <button
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setShareModalFeature(feature);
-                            }}
-                            className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
-                            title="Share Asset Card"
-                        >
-                            <Share2 className="w-4 h-4" />
-                        </button>
-                        <div className="flex items-center text-gray-400">
-                            <MessageSquare className="w-5 h-5 mr-1" />
+                    <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                            <div className={`flex-shrink-0 h-8 w-8 rounded flex items-center justify-center text-xs font-bold text-white ${
+                                feature.category === 'AI' ? 'bg-indigo-500' :
+                                feature.category === 'Mobile' ? 'bg-purple-500' :
+                                feature.category === 'Frontend' ? 'bg-emerald-500' :
+                                feature.category === 'Backend' ? 'bg-blue-500' : 'bg-gray-500'
+                            }`}>
+                                {feature.ticker || feature.title.substring(0,3).toUpperCase()}
+                            </div>
+                            {!!feature.is_boosted && <Zap className="w-3 h-3 ml-1 text-yellow-500" />}
                         </div>
-                    </div>
-                </div>
-              </div>
-            </Link>
-          ))
+                    </td>
+                    <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                            <span className="text-sm font-medium text-gray-900 line-clamp-1">{feature.title}</span>
+                            <span className="text-xs text-gray-500 line-clamp-1 hidden sm:block">{feature.description}</span>
+                        </div>
+                    </td>
+                    <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 capitalize">
+                        {feature.category}
+                        </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="text-sm font-mono font-bold text-emerald-600">
+                            ${(feature.pledged_amount || 0).toLocaleString()}
+                        </div>
+                         {/* Simulated 24h change */}
+                        <div className="text-xs text-green-500 font-mono">
+                           +{(Math.random() * 5).toFixed(2)}%
+                        </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 font-mono">
+                        {feature.votes.toLocaleString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-2">
+                            <button
+                                onClick={(e) => handleVote(e, feature.id)}
+                                className="text-emerald-600 hover:text-emerald-900 bg-emerald-50 px-2 py-1 rounded border border-emerald-200 text-xs font-bold"
+                            >
+                                BUY
+                            </button>
+                             <button
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setShareModalFeature(feature);
+                                }}
+                                className="text-gray-400 hover:text-gray-600"
+                            >
+                                <Share2 className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
+        </div>
         )}
       </div>
     </div>

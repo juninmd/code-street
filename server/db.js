@@ -66,6 +66,15 @@ db.serialize(() => {
                     console.log('is_burned column ready.');
                 }
             });
+
+            // Add ticker column if it doesn't exist
+            db.run('ALTER TABLE features ADD COLUMN ticker TEXT', (err) => {
+                if (err && !err.message.includes('duplicate column')) {
+                    console.error('Error adding ticker column', err.message);
+                } else {
+                    console.log('ticker column ready.');
+                }
+            });
         }
     });
 

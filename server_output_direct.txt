@@ -1,0 +1,8 @@
+Server running on port 3000
+Connected to the SQLite database.
+Features table ready.
+Comments table ready.
+Pledges table ready.
+is_burned column ready.
+deadline column ready.
+ticker column ready.
