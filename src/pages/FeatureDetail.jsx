@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronUp, ArrowLeft, MessageSquare, Send, DollarSign, Briefcase, Share2 } from 'lucide-react';
+import { ChevronUp, ArrowLeft, MessageSquare, Send, DollarSign, Briefcase, Share2, FileText, X } from 'lucide-react';
 import { format } from 'date-fns';
 import confetti from 'canvas-confetti';
 import ShareBountyModal from '../components/ShareBountyModal';
 import PriceChart from '../components/PriceChart';
+import AnalystRating from '../components/AnalystRating';
 
 const FeatureDetail = () => {
   const { id } = useParams();
@@ -18,6 +19,7 @@ const FeatureDetail = () => {
   const [isPledging, setIsPledging] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false); // Simple client-side toggle for demo
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showBusinessPlan, setShowBusinessPlan] = useState(false);
 
   useEffect(() => {
     // Parallel fetch feature and comments
@@ -202,6 +204,20 @@ const FeatureDetail = () => {
                       </div>
                       <p className="text-gray-600 text-lg leading-relaxed">{feature.description}</p>
 
+                      {/* Wealth Tools */}
+                      <div className="flex gap-2 mt-4">
+                        <button
+                            onClick={() => setShowBusinessPlan(true)}
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                        >
+                            <FileText className="w-4 h-4 mr-2 text-emerald-600" />
+                            Generate Business Plan
+                        </button>
+                      </div>
+
+                      {/* Analyst Rating */}
+                      <AnalystRating title={feature.title} description={feature.description} currentPrice={feature.pledged_amount} />
+
                       {/* Price History Chart */}
                       <div className="mt-6">
                         <PriceChart history={history} />
@@ -289,6 +305,65 @@ const FeatureDetail = () => {
       </div>
 
       {showShareModal && <ShareBountyModal feature={feature} onClose={() => setShowShareModal(false)} />}
+
+      {/* Business Plan Modal */}
+      {showBusinessPlan && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+             <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-emerald-100">
+                <div className="bg-emerald-900 p-4 flex justify-between items-center text-white">
+                    <h3 className="font-bold flex items-center gap-2">
+                        <Briefcase className="w-5 h-5" />
+                        Generated Business Plan
+                    </h3>
+                    <button onClick={() => setShowBusinessPlan(false)} className="hover:bg-emerald-800 p-1 rounded">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+                <div className="p-6 space-y-6">
+                    <div>
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Executive Summary</h4>
+                        <p className="text-gray-800 font-medium">{feature.description}</p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+                            <h4 className="text-xs font-bold text-emerald-700 uppercase mb-1">Revenue Model</h4>
+                            <p className="text-sm font-bold text-emerald-900">
+                                {["SaaS Subscription", "Freemium", "Enterprise License", "Ads & Data"][feature.title.length % 4]}
+                            </p>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+                            <h4 className="text-xs font-bold text-blue-700 uppercase mb-1">Est. ARR</h4>
+                            <p className="text-sm font-bold text-blue-900">
+                                ${(feature.pledged_amount * 120 + 5000).toLocaleString()}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Go-to-Market Strategy</h4>
+                        <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
+                            <li>Launch MVP on CodeStreet Exchange.</li>
+                            <li>Target early adopters in {feature.category} sector.</li>
+                            <li>Leverage viral growth via referral incentives.</li>
+                        </ul>
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-100">
+                        <button
+                            onClick={() => {
+                                alert("Business Plan exported to Clipboard!");
+                                setShowBusinessPlan(false);
+                            }}
+                            className="w-full py-2 bg-gray-900 text-white rounded-lg font-bold hover:bg-black transition-colors"
+                        >
+                            Export to PDF (Premium)
+                        </button>
+                    </div>
+                </div>
+             </div>
+        </div>
+      )}
 
       {/* Comments Section */}
       <div className="max-w-2xl mx-auto">

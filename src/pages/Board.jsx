@@ -19,6 +19,7 @@ const Board = () => {
   const [showForm, setShowForm] = useState(false);
   const [newFeature, setNewFeature] = useState({ title: '', description: '', category: 'Frontend', deadline: '', ticker: '' });
   const [initialPledge, setInitialPledge] = useState('');
+  const [projRevenue, setProjRevenue] = useState('');
   const [stats, setStats] = useState({ total_payout: 0, active_bounty: 0 });
   const [submitting, setSubmitting] = useState(false);
 
@@ -53,6 +54,36 @@ const Board = () => {
     fetchFeatures();
     fetchStats();
   }, [selectedCategory]);
+
+  // Whale Watcher Simulation
+  useEffect(() => {
+    const interval = setInterval(() => {
+        if (features.length > 0 && Math.random() > 0.7) {
+            const randomFeature = features[Math.floor(Math.random() * features.length)];
+            const randomAmount = Math.floor(Math.random() * 500) + 100;
+
+            const div = document.createElement('div');
+            div.className = 'fixed bottom-20 left-4 sm:bottom-4 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-2xl animate-fade-in-up z-50 flex items-center gap-3 border border-gray-700 max-w-xs sm:max-w-sm';
+            div.innerHTML = `
+                <div class="bg-yellow-500 rounded-full p-1.5 animate-pulse">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5c0-5.523 4.477-10 10-10z"></path><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-5-2-5-3S3.5 10.5 3.5 12a2.5 2.5 0 0 0 2.5 2.5"></path><path d="M9 10a1 1 0 1 1-2 0"></path></svg>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Whale Alert 🐳</p>
+                    <p class="text-xs sm:text-sm font-bold">Someone pledged <span class="text-emerald-400">$${randomAmount}</span> on ${randomFeature.ticker || randomFeature.title}</p>
+                </div>
+            `;
+            document.body.appendChild(div);
+            setTimeout(() => {
+                div.style.opacity = '0';
+                div.style.transform = 'translateY(20px)';
+                div.style.transition = 'all 0.5s';
+                setTimeout(() => div.remove(), 500);
+            }, 4000);
+        }
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [features]);
 
   const simulateAiEstimation = () => {
       const text = newFeature.description || '';
@@ -208,6 +239,7 @@ const Board = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             ...newFeature,
+            description: newFeature.description + (projRevenue ? `\n\n[Proj. Revenue: $${projRevenue}/mo]` : ''),
             category: newFeature.category.toLowerCase(),
             initial_pledge: initialPledge,
             ticker: newFeature.ticker ? newFeature.ticker.toUpperCase() : undefined
@@ -220,6 +252,7 @@ const Board = () => {
       }
       setNewFeature({ title: '', description: '', category: 'Frontend', deadline: '', ticker: '' });
       setInitialPledge('');
+      setProjRevenue('');
       setShowForm(false);
       fetchStats();
     } catch (err) {
@@ -386,6 +419,18 @@ const Board = () => {
                 value={newFeature.description}
                 onChange={e => setNewFeature({...newFeature, description: e.target.value})}
               />
+            </div>
+
+            <div>
+                <label className="block text-sm font-medium text-gray-700">Projected Monthly Revenue ($)</label>
+                <input
+                    type="number"
+                    min="0"
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"
+                    placeholder="e.g. 5000"
+                    value={projRevenue}
+                    onChange={e => setProjRevenue(e.target.value)}
+                />
             </div>
 
             <div>

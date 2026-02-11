@@ -1,70 +1,89 @@
 import React from 'react';
-
-const SECTOR_COLORS = {
-  'Frontend': 'bg-emerald-600',
-  'Backend': 'bg-blue-600',
-  'Mobile': 'bg-purple-600',
-  'AI': 'bg-indigo-600',
-  'Design': 'bg-pink-600',
-  'Other': 'bg-gray-600'
-};
+import { useNavigate } from 'react-router-dom';
 
 const MarketHeatmap = ({ features = [] }) => {
-  // Aggregate data
-  const sectors = features.reduce((acc, feature) => {
-    // Capitalize first letter for consistency with CATEGORIES
-    const rawCat = feature.category || 'Other';
-    const cat = rawCat.charAt(0).toUpperCase() + rawCat.slice(1);
-    const amount = feature.pledged_amount || 0;
+  const navigate = useNavigate();
 
-    if (!acc[cat]) {
-      acc[cat] = { name: cat, value: 0, count: 0 };
-    }
-    acc[cat].value += amount;
-    acc[cat].count += 1;
-    return acc;
-  }, {});
+  // 1. Filter active features (ignore extremely small ones unless there are few)
+  let activeFeatures = features
+    .filter(f => f.status !== 'completed' && f.status !== 'rejected')
+    .sort((a, b) => (b.pledged_amount || 0) - (a.pledged_amount || 0));
 
-  const data = Object.values(sectors).sort((a, b) => b.value - a.value);
-  const totalValue = data.reduce((sum, item) => sum + item.value, 0) || 1; // Avoid divide by zero
+  // If we have too many, take top 25
+  if (activeFeatures.length > 25) {
+    activeFeatures = activeFeatures.slice(0, 25);
+  }
 
-  if (data.length === 0) return null;
+  // Calculate Total Market Cap of displayed items
+  const totalCap = activeFeatures.reduce((sum, f) => sum + (f.pledged_amount || 0), 0) || 1;
+
+  if (activeFeatures.length === 0) return null;
+
+  const getColor = (feature) => {
+    // Simulate "Heat" based on votes (momentum) relative to others
+    const maxVotes = Math.max(...activeFeatures.map(f => f.votes)) || 1;
+    const intensity = feature.votes / maxVotes;
+
+    // Green shades for positive momentum
+    if (intensity > 0.8) return 'bg-emerald-500'; // Hot
+    if (intensity > 0.6) return 'bg-emerald-600';
+    if (intensity > 0.4) return 'bg-emerald-700';
+    if (intensity > 0.2) return 'bg-emerald-800';
+    return 'bg-gray-700'; // Cold
+  };
 
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6">
       <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider">Market Heatmap</h3>
-          <span className="text-xs text-gray-400">Size = Cap</span>
+          <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Live Market Map
+          </h3>
+          <span className="text-xs text-gray-400">Size = Market Cap • Color = Momentum</span>
       </div>
-      <div className="flex w-full h-32 rounded-lg overflow-hidden gap-0.5 bg-gray-100">
-        {data.map((sector) => {
-          const percent = (sector.value / totalValue) * 100;
-          // Ensure tiny sectors show at least a sliver if they have value, else 0
-          const width = sector.value > 0 ? Math.max(percent, 2) : 0;
 
-          if (width === 0) return null;
+      {/* Grid Container */}
+      <div className="flex flex-wrap content-start w-full h-48 sm:h-64 rounded-lg overflow-hidden bg-gray-900 p-1 gap-1">
+        {activeFeatures.map((feature) => {
+          // Calculate relative size
+          const percent = ((feature.pledged_amount || 0) / totalCap) * 100;
+          // Minimum visibility (1% or decent pixel width)
+          const width = Math.max(percent, 2);
+          const colorClass = getColor(feature);
 
           return (
             <div
-              key={sector.name}
-              style={{ width: `${width}%` }}
-              className={`relative flex flex-col items-center justify-center p-1 transition-all hover:opacity-90 cursor-help group ${SECTOR_COLORS[sector.name] || 'bg-gray-500'}`}
-              title={`${sector.name}: $${sector.value.toLocaleString()} (${sector.count} IPOs)`}
+              key={feature.id}
+              onClick={() => navigate(`/feature/${feature.id}`)}
+              style={{
+                width: `calc(${width}% - 4px)`,
+                flexGrow: 1,
+                minWidth: '40px'
+              }}
+              className={`
+                relative flex flex-col items-center justify-center p-1
+                cursor-pointer transition-all hover:brightness-110 hover:scale-[1.02] hover:z-10
+                rounded-sm border border-black/10 shadow-sm
+                ${colorClass}
+              `}
+              title={`${feature.title}: $${(feature.pledged_amount || 0).toLocaleString()} • ${feature.votes} Votes`}
             >
-              <span className="text-white font-bold text-xs sm:text-sm truncate w-full text-center drop-shadow-md">
-                {sector.name}
+              <span className="text-white font-bold text-[10px] sm:text-xs truncate w-full text-center leading-tight">
+                {feature.ticker || feature.title.substring(0, 3).toUpperCase()}
               </span>
-              <span className="text-white/90 text-[10px] font-mono hidden sm:block group-hover:block">
-                ${sector.value.toLocaleString()}
-              </span>
+              {(feature.pledged_amount > 0) && (
+                <span className="text-white/80 text-[9px] font-mono truncate hidden sm:block">
+                    ${feature.pledged_amount < 1000 ? feature.pledged_amount : (feature.pledged_amount/1000).toFixed(1) + 'k'}
+                </span>
+              )}
             </div>
           );
         })}
-         {totalValue === 0 && (
-            <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                No Market Capitalization
-            </div>
-         )}
+        {activeFeatures.length === 0 && (
+             <div className="w-full h-full flex items-center justify-center text-gray-500">
+                 Market Closed (No Active IPOs)
+             </div>
+        )}
       </div>
     </div>
   );
