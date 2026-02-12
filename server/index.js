@@ -39,10 +39,19 @@ app.get('/api/features', async (req, res) => {
 
   try {
     const rows = await dbAll(sql, params);
-    const data = rows.map(row => ({
-        ...row,
-        hype_score: (row.votes * 10) + ((row.pledged_amount || 0) * 0.1)
-    }));
+    const data = rows.map(row => {
+        const pledge = row.pledged_amount || 0;
+        const current_price = 1.00 + (row.votes * 0.10) + (pledge * 0.001);
+        // Deterministic 24h change based on ID
+        const day_change = ((row.id * 13.5) % 10) - 5;
+
+        return {
+            ...row,
+            current_price: parseFloat(current_price.toFixed(2)),
+            day_change: parseFloat(day_change.toFixed(2)),
+            hype_score: (row.votes * 10) + (pledge * 0.1)
+        };
+    });
     res.json({ data });
   } catch (err) {
     res.status(500).json({ error: err.message });
