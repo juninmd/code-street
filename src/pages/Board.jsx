@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti';
 import MarketInsider from '../components/MarketInsider';
 import ShareBountyModal from '../components/ShareBountyModal';
 import MarketHeatmap from '../components/MarketHeatmap';
+import { addToPortfolio } from '../utils/portfolio';
 
 const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
 
@@ -70,7 +71,7 @@ const Board = () => {
                 </div>
                 <div>
                     <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Whale Alert 🐳</p>
-                    <p class="text-xs sm:text-sm font-bold">Someone pledged <span class="text-emerald-400">$${randomAmount}</span> on ${randomFeature.ticker || randomFeature.title}</p>
+                    <p class="text-xs sm:text-sm font-bold">Someone bought <span class="text-emerald-400">${Math.floor(randomAmount/10)} shares</span> of ${randomFeature.ticker || randomFeature.title}</p>
                 </div>
             `;
             document.body.appendChild(div);
@@ -99,25 +100,20 @@ const Board = () => {
       setInitialPledge(Math.ceil(estimate).toString());
   };
 
-  const addToPortfolio = (id) => {
-      const current = JSON.parse(localStorage.getItem('my_portfolio') || '[]');
-      if (!current.includes(parseInt(id))) {
-          current.push(parseInt(id));
-          localStorage.setItem('my_portfolio', JSON.stringify(current));
-          // Simple notification
-          const div = document.createElement('div');
-          div.className = 'fixed bottom-20 right-4 sm:bottom-4 bg-emerald-900 text-white px-4 py-2 rounded shadow-lg animate-fade-in-up z-50 text-sm font-bold flex items-center gap-2 border border-emerald-700';
-          div.innerHTML = '<span>💼 Asset added to Portfolio</span>';
-          document.body.appendChild(div);
-          setTimeout(() => div.remove(), 3000);
-      }
-  };
-
   const handleVote = async (e, id) => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation();
 
-    addToPortfolio(id);
+    // Use current_price from features list or default to 1
+    const feat = features.find(f => f.id === id);
+    addToPortfolio(id, 0, feat ? feat.current_price : 1);
+
+    // Simple notification
+    const div = document.createElement('div');
+    div.className = 'fixed bottom-20 right-4 sm:bottom-4 bg-emerald-900 text-white px-4 py-2 rounded shadow-lg animate-fade-in-up z-50 text-sm font-bold flex items-center gap-2 border border-emerald-700';
+    div.innerHTML = '<span>💼 Added to Watchlist</span>';
+    document.body.appendChild(div);
+    setTimeout(() => div.remove(), 3000);
 
     // Celebration
     confetti({
@@ -499,7 +495,7 @@ const Board = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticker</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset</th>
                 <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sector</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Price (Pledge)</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Share Price</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Vol (Votes)</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
             </tr>
@@ -542,11 +538,10 @@ const Board = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="text-sm font-mono font-bold text-emerald-600">
-                            ${(feature.pledged_amount || 0).toLocaleString()}
+                            ${(feature.current_price || 1.00).toFixed(2)}
                         </div>
-                         {/* Simulated 24h change */}
-                        <div className="text-xs text-green-500 font-mono">
-                           +{(Math.random() * 5).toFixed(2)}%
+                        <div className={`text-xs font-mono ${(feature.day_change || 0) >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                           {(feature.day_change || 0) >= 0 ? '+' : ''}{(feature.day_change || 0)}%
                         </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 font-mono">

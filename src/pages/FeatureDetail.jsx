@@ -6,6 +6,7 @@ import confetti from 'canvas-confetti';
 import ShareBountyModal from '../components/ShareBountyModal';
 import PriceChart from '../components/PriceChart';
 import AnalystRating from '../components/AnalystRating';
+import { addToPortfolio } from '../utils/portfolio';
 
 const FeatureDetail = () => {
   const { id } = useParams();
@@ -53,23 +54,19 @@ const FeatureDetail = () => {
     fetchData();
   }, [id]);
 
-  const addToPortfolio = () => {
-      const current = JSON.parse(localStorage.getItem('my_portfolio') || '[]');
-      if (!current.includes(parseInt(id))) {
-          current.push(parseInt(id));
-          localStorage.setItem('my_portfolio', JSON.stringify(current));
-          // Simple notification
-          const div = document.createElement('div');
-          div.className = 'fixed bottom-20 right-4 sm:bottom-4 bg-emerald-900 text-white px-4 py-2 rounded shadow-lg animate-fade-in-up z-50 text-sm font-bold flex items-center gap-2 border border-emerald-700';
-          div.innerHTML = '<span>💼 Asset added to Portfolio</span>';
-          document.body.appendChild(div);
-          setTimeout(() => div.remove(), 3000);
-      }
+  const showToast = (msg) => {
+      const div = document.createElement('div');
+      div.className = 'fixed bottom-20 right-4 sm:bottom-4 bg-emerald-900 text-white px-4 py-2 rounded shadow-lg animate-fade-in-up z-50 text-sm font-bold flex items-center gap-2 border border-emerald-700';
+      div.innerHTML = `<span>${msg}</span>`;
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 3000);
   };
 
   const handleVote = async () => {
     if (!feature) return;
-    addToPortfolio();
+    // For voting, we just add 0 shares to track it
+    addToPortfolio(id, 0, feature.current_price || 0);
+    showToast('💼 Added to Watchlist');
     // Optimistic
     setFeature({ ...feature, votes: feature.votes + 1 });
     try {
@@ -153,7 +150,7 @@ const FeatureDetail = () => {
               setHistory(prev => [...prev, newPledge]);
 
               setPledgeAmount('');
-              addToPortfolio();
+              // addToPortfolio called in onSubmit
           }
       } catch (err) {
           console.error(err);
@@ -223,34 +220,60 @@ const FeatureDetail = () => {
                         <PriceChart history={history} />
                       </div>
 
-                      {/* Pledge Section */}
-                      <div className="mt-6 p-5 bg-emerald-50 border border-emerald-100 rounded-xl">
-                          <h3 className="text-emerald-900 font-bold flex items-center mb-2">
-                              <DollarSign className="w-5 h-5 mr-1" />
-                              Total Bounty: <span className="text-2xl ml-2">${(feature.pledged_amount || 0).toLocaleString()}</span>
-                          </h3>
-                          <p className="text-emerald-700 text-sm mb-4">Add to this bounty to attract top developers.</p>
-                          <form onSubmit={handlePledge} className="flex gap-3">
-                              <div className="relative">
-                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
-                                  <input
-                                      type="number"
-                                      min="1"
-                                      step="1"
-                                      value={pledgeAmount}
-                                      onChange={(e) => setPledgeAmount(e.target.value)}
-                                      placeholder="Amount"
-                                      className="pl-7 pr-4 py-2 border border-emerald-200 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 w-32 outline-none"
-                                  />
+                      {/* Pledge/Buy Section */}
+                      <div className="mt-6 p-5 bg-emerald-900 text-white border border-emerald-800 rounded-xl relative overflow-hidden">
+                          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full mix-blend-overlay filter blur-3xl opacity-10 -mr-16 -mt-16"></div>
+
+                          <div className="flex justify-between items-start mb-6">
+                              <div>
+                                  <p className="text-emerald-200 text-xs font-bold uppercase tracking-wider mb-1">Current Stock Price</p>
+                                  <h3 className="text-4xl font-extrabold flex items-baseline">
+                                      ${(feature.current_price || 1.00).toFixed(2)}
+                                      <span className={`text-sm ml-2 font-mono ${(feature.day_change || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                          {(feature.day_change || 0) >= 0 ? '+' : ''}{(feature.day_change || 0)}%
+                                      </span>
+                                  </h3>
+                              </div>
+                              <div className="text-right">
+                                  <p className="text-emerald-200 text-xs font-bold uppercase tracking-wider mb-1">Market Cap</p>
+                                  <p className="text-xl font-bold font-mono">${(feature.pledged_amount || 0).toLocaleString()}</p>
+                              </div>
+                          </div>
+
+                          <form onSubmit={(e) => {
+                              const shares = parseFloat(pledgeAmount) / (feature.current_price || 1);
+                              addToPortfolio(id, shares, feature.current_price || 1);
+                              showToast(`🚀 Bought ${shares.toFixed(2)} Shares!`);
+                              handlePledge(e); // Let the backend pledge logic run too
+                          }} className="flex gap-3 items-end">
+                              <div className="relative flex-1">
+                                  <label className="block text-xs font-bold text-emerald-300 uppercase mb-1">Investment Amount</label>
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        step="1"
+                                        value={pledgeAmount}
+                                        onChange={(e) => setPledgeAmount(e.target.value)}
+                                        placeholder="0.00"
+                                        className="pl-7 pr-4 py-3 bg-emerald-950/50 border border-emerald-700 rounded-lg focus:ring-2 focus:ring-emerald-400 focus:border-emerald-400 w-full outline-none text-white font-mono text-lg"
+                                    />
+                                  </div>
                               </div>
                               <button
                                   type="submit"
                                   disabled={isPledging || !pledgeAmount}
-                                  className="px-4 py-2 bg-emerald-600 text-white font-medium rounded-md hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm"
+                                  className="px-6 py-3 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-400 disabled:opacity-50 transition-colors shadow-lg shadow-emerald-900/50 flex-shrink-0"
                               >
-                                  {isPledging ? 'Processing...' : 'Add to Bounty'}
+                                  {isPledging ? 'Buying...' : 'Buy Shares'}
                               </button>
                           </form>
+                          {pledgeAmount && !isNaN(parseFloat(pledgeAmount)) && (
+                              <p className="text-xs text-emerald-400 mt-2 text-right">
+                                  ≈ {(parseFloat(pledgeAmount) / (feature.current_price || 1)).toFixed(2)} Shares
+                              </p>
+                          )}
                       </div>
 
                       {/* Developer Actions (Claim) */}
