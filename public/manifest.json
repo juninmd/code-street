@@ -1,13 +1,20 @@
 {
   "name": "CodeStreet: The Feature Futures Exchange",
   "short_name": "CodeStreet",
-  "description": "The Feature Futures Exchange. Ship or Short.",
+  "description": "The first Crowdfunded Roadmap Platform. Invest in features you want to see built.",
+  "id": "codestreet-ventures-app",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#111827",
   "theme_color": "#10B981",
+  "categories": ["finance", "productivity", "business"],
   "icons": [
+    {
+      "src": "/vite.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192"
+    },
     {
       "src": "/vite.svg",
       "type": "image/svg+xml",

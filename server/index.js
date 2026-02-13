@@ -185,6 +185,23 @@ app.post('/api/features/:id/pledge', async (req, res) => {
   }
 });
 
+// Get recent pledges (Global)
+app.get('/api/pledges/recent', async (req, res) => {
+    const sql = `
+        SELECT pledges.id, pledges.amount, pledges.created_at, features.title, features.id as feature_id
+        FROM pledges
+        JOIN features ON pledges.feature_id = features.id
+        ORDER BY pledges.created_at DESC
+        LIMIT 10
+    `;
+    try {
+        const rows = await dbAll(sql);
+        res.json({ data: rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get pledge history for a feature
 app.get('/api/features/:id/history', async (req, res) => {
     const { id } = req.params;

@@ -1,6 +1,15 @@
 # CodeStreet
 
-CodeStreet is a feature futures exchange where users pledge money to feature requests (Bounties) and developers can claim them.
+CodeStreet is the world's first **Crowdfunded Roadmap Platform**.
+
+It turns feature requests into financial assets. Users "pledge" money to features they want, and developers "short" the time to build them.
+
+## Key Features
+
+- **Feature Futures Market:** Buy shares in features.
+- **Whale Watcher:** Real-time alerts when big money enters the market.
+- **Executive Dashboard:** A SaaS-style revenue dashboard for the platform admin to track the 5% rake.
+- **PWA Ready:** Installable on Android and iOS for a native app experience.
 
 ## Tech Stack
 
@@ -25,7 +34,7 @@ CodeStreet is a feature futures exchange where users pledge money to feature req
 
 ### Running the App
 
-To run both the frontend and backend concurrently (ensure you have a way to run them, or run them in separate terminals):
+To run both the frontend and backend concurrently:
 
 **Backend:**
 ```bash
@@ -39,15 +48,8 @@ pnpm dev
 
 The backend runs on port 3000, and the frontend proxies API requests to it.
 
-## Scripts
-
-- `pnpm dev`: Start frontend dev server.
-- `pnpm server`: Start backend server.
-- `pnpm build`: Build frontend.
-- `pnpm test`: Run tests.
-
 ## API Endpoints
 
 - `GET /api/features`: List features.
-- `POST /api/features`: Create a feature.
-- `GET /api/stats`: Get platform stats.
+- `GET /api/pledges/recent`: Live market activity feed.
+- `GET /api/stats`: Platform revenue statistics.
