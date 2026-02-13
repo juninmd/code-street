@@ -8,9 +8,12 @@ import FeatureDetail from './pages/FeatureDetail';
 import HunterProfile from './pages/HunterProfile';
 import AdminWealth from './pages/AdminWealth';
 import Portfolio from './pages/Portfolio';
+import WhaleAlert from './components/WhaleAlert';
 
 function App() {
   return (
+    <>
+    <WhaleAlert />
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Board />} />
@@ -22,6 +25,7 @@ function App() {
         <Route path="admin/wealth" element={<AdminWealth />} />
       </Route>
     </Routes>
+    </>
   );
 }
 
