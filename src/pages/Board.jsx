@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap, Share2, BarChart2, Clock, AlertTriangle } from 'lucide-react';
+import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap, Share2, BarChart2, Clock, AlertTriangle, Crosshair } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import MarketInsider from '../components/MarketInsider';
 import ShareBountyModal from '../components/ShareBountyModal';
 import MarketHeatmap from '../components/MarketHeatmap';
+import SniperMode from '../components/SniperMode';
 import { addToPortfolio } from '../utils/portfolio';
 
 const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
@@ -12,6 +13,7 @@ const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
 const Board = () => {
   const navigate = useNavigate();
   const [showInsider, setShowInsider] = useState(false);
+  const [isSniperMode, setIsSniperMode] = useState(false);
   const [shareModalFeature, setShareModalFeature] = useState(null);
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -302,6 +304,13 @@ const Board = () => {
             Insider Intel
             </button>
             <button
+            onClick={() => setIsSniperMode(true)}
+            className="inline-flex items-center px-4 py-2 border border-red-200 shadow-sm text-sm font-bold rounded-md text-red-800 bg-red-50 hover:bg-red-100 focus:outline-none"
+            >
+            <Crosshair className="w-4 h-4 mr-2 text-red-600" />
+            Sniper Mode
+            </button>
+            <button
             onClick={handleMysteryBounty}
             className="inline-flex items-center px-4 py-2 border border-emerald-200 shadow-sm text-sm font-bold rounded-md text-emerald-700 bg-emerald-50 hover:bg-emerald-100 focus:outline-none animate-pulse-gold"
             >
@@ -351,6 +360,7 @@ const Board = () => {
       </div>
 
       {showInsider && <MarketInsider features={features} onClose={() => setShowInsider(false)} />}
+      {isSniperMode && <SniperMode features={features} onClose={() => setIsSniperMode(false)} />}
       {shareModalFeature && <ShareBountyModal feature={shareModalFeature} onClose={() => setShareModalFeature(null)} />}
 
       {/* Suggestion Form */}

@@ -6,6 +6,7 @@ import confetti from 'canvas-confetti';
 import ShareBountyModal from '../components/ShareBountyModal';
 import PriceChart from '../components/PriceChart';
 import AnalystRating from '../components/AnalystRating';
+import PaymentModal from '../components/PaymentModal';
 import { addToPortfolio } from '../utils/portfolio';
 
 const FeatureDetail = () => {
@@ -21,6 +22,7 @@ const FeatureDetail = () => {
   const [isAdmin, setIsAdmin] = useState(false); // Simple client-side toggle for demo
   const [showShareModal, setShowShareModal] = useState(false);
   const [showBusinessPlan, setShowBusinessPlan] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   useEffect(() => {
     // Parallel fetch feature and comments
@@ -121,8 +123,7 @@ const FeatureDetail = () => {
       }
   }
 
-  const handlePledge = async (e) => {
-      e.preventDefault();
+  const handlePledge = async () => {
       if (!pledgeAmount || isNaN(pledgeAmount) || pledgeAmount <= 0) return;
 
       setIsPledging(true);
@@ -133,6 +134,10 @@ const FeatureDetail = () => {
               body: JSON.stringify({ amount: parseFloat(pledgeAmount) })
           });
           if (res.ok) {
+              const shares = parseFloat(pledgeAmount) / (feature.current_price || 1);
+              addToPortfolio(id, shares, feature.current_price || 1);
+              showToast(`🚀 Bought ${shares.toFixed(2)} Shares!`);
+
               confetti({
                   particleCount: 150,
                   spread: 100,
@@ -150,7 +155,7 @@ const FeatureDetail = () => {
               setHistory(prev => [...prev, newPledge]);
 
               setPledgeAmount('');
-              // addToPortfolio called in onSubmit
+              setShowPaymentModal(false);
           }
       } catch (err) {
           console.error(err);
@@ -222,7 +227,7 @@ const FeatureDetail = () => {
 
                       {/* Pledge/Buy Section */}
                       <div className="mt-6 p-5 bg-emerald-900 text-white border border-emerald-800 rounded-xl relative overflow-hidden">
-                          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full mix-blend-overlay filter blur-3xl opacity-10 -mr-16 -mt-16"></div>
+                          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full mix-blend-overlay filter blur-3xl opacity-10 -mr-16 -mt-16 pointer-events-none"></div>
 
                           <div className="flex justify-between items-start mb-6">
                               <div>
@@ -241,10 +246,10 @@ const FeatureDetail = () => {
                           </div>
 
                           <form onSubmit={(e) => {
-                              const shares = parseFloat(pledgeAmount) / (feature.current_price || 1);
-                              addToPortfolio(id, shares, feature.current_price || 1);
-                              showToast(`🚀 Bought ${shares.toFixed(2)} Shares!`);
-                              handlePledge(e); // Let the backend pledge logic run too
+                              e.preventDefault();
+                              if(pledgeAmount && !isNaN(pledgeAmount) && parseFloat(pledgeAmount) > 0) {
+                                setShowPaymentModal(true);
+                              }
                           }} className="flex gap-3 items-end">
                               <div className="relative flex-1">
                                   <label className="block text-xs font-bold text-emerald-300 uppercase mb-1">Investment Amount</label>
@@ -328,6 +333,14 @@ const FeatureDetail = () => {
       </div>
 
       {showShareModal && <ShareBountyModal feature={feature} onClose={() => setShowShareModal(false)} />}
+
+      {showPaymentModal && (
+          <PaymentModal
+            amount={parseFloat(pledgeAmount)}
+            onConfirm={handlePledge}
+            onClose={() => setShowPaymentModal(false)}
+          />
+      )}
 
       {/* Business Plan Modal */}
       {showBusinessPlan && (

@@ -125,6 +125,22 @@ const AdminWealth = () => {
           </div>
            <p className="text-xs text-gray-400">Currently held in escrow.</p>
         </div>
+
+        {/* Projected ARR */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
+          <div className="flex justify-between items-start mb-4">
+            <div className="p-2 bg-pink-50 rounded-lg">
+              <TrendingUp className="w-6 h-6 text-pink-600" />
+            </div>
+          </div>
+          <div className="mb-2">
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Projected ARR</p>
+            <h2 className="text-3xl font-bold text-gray-900">
+              ${(revenue * 12).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </h2>
+          </div>
+           <p className="text-xs text-gray-400">Based on current monthly run rate.</p>
+        </div>
       </div>
 
       {/* Recent Transactions Table */}
