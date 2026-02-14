@@ -5,10 +5,10 @@ This file serves as a context and instruction guide for AI agents working on thi
 ## Project Context
 **CodeStreet: The Crowdfunded Roadmap Platform (SaaS).**
 
-This is a serious business tool disguised as a stock market.
-- **The Core Product:** A platform where users vote with their wallets. Companies use this to prioritize features based on actual revenue potential, not just "upvotes".
-- **The "Rich" Factor:** The platform owner (The Admin) collects a 5% fee on all pledges. The "Executive Dashboard" visualizes this wealth accumulation.
-- **The Surprise:** The "Whale Alert" system creates FOMO (Fear Of Missing Out) by broadcasting large investments in real-time.
+This is a serious B2B product management tool.
+- **The Core Product:** A platform where users vote with their wallets. Companies use this to prioritize features based on actual revenue potential.
+- **The "Rich" Factor:** The platform owner (The Admin) collects a 5% fee on all pledges. The "Executive Dashboard" visualizes this wealth accumulation and ARR (Annual Recurring Revenue).
+- **The Surprise:** "Sniper Mode" highlights undervalued features, encouraging users to pledge where their money has the most leverage.
 
 ## Technology Strictures
 - **Frontend:** React 19, Vite, Tailwind CSS (v4). Use functional components and hooks.
@@ -17,8 +17,9 @@ This is a serious business tool disguised as a stock market.
 - **Formatting:** Ensure code is clean and readable.
 
 ## Key Components
-- **WhaleAlert.jsx:** Global notification system for high-value pledges.
-- **AdminWealth.jsx:** The "C-Suite" view for tracking platform revenue (SaaS metrics).
+- **SniperMode.jsx:** AI-driven feature highlighting.
+- **PaymentModal.jsx:** Simulated payment gateway (Stripe-style).
+- **AdminWealth.jsx:** The "C-Suite" view for tracking SaaS metrics.
 - **FeatureDetail.jsx:** The "IPO" page where users buy shares.
 
 ## Protocol
