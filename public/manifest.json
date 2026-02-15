@@ -20,5 +20,28 @@
       "type": "image/svg+xml",
       "sizes": "512x512"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "My Portfolio",
+      "short_name": "Portfolio",
+      "description": "View your feature equity holdings",
+      "url": "/portfolio",
+      "icons": [{ "src": "/vite.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Market Board",
+      "short_name": "Board",
+      "description": "View live feature listings",
+      "url": "/",
+      "icons": [{ "src": "/vite.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Executive Wealth",
+      "short_name": "Wealth",
+      "description": "Admin Wealth Dashboard",
+      "url": "/admin/wealth",
+      "icons": [{ "src": "/vite.svg", "sizes": "192x192" }]
+    }
   ]
 }

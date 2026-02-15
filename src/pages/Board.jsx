@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap, Share2, BarChart2, Clock, AlertTriangle, Crosshair } from 'lucide-react';
+import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap, Share2, BarChart2, Clock, AlertTriangle, Crosshair, Building, TrendingUp } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import MarketInsider from '../components/MarketInsider';
 import ShareBountyModal from '../components/ShareBountyModal';
@@ -319,10 +319,10 @@ const Board = () => {
             </button>
             <button
             onClick={() => setShowForm(!showForm)}
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none"
+            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none shadow-lg hover:shadow-emerald-500/30 transition-all"
             >
             <Plus className="w-4 h-4 mr-2" />
-            Launch IPO
+            File IPO (S-1)
             </button>
         </div>
       </div>
@@ -366,7 +366,17 @@ const Board = () => {
       {/* Suggestion Form */}
       {showForm && (
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 animate-fade-in-down">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Launch New IPO (Initial Project Offering)</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Building className="w-5 h-5 text-gray-500" />
+                File IPO (S-1 Registration)
+            </h3>
+            <span className="text-xs text-gray-400 font-mono uppercase tracking-wider border border-gray-200 px-2 py-1 rounded">SEC Form 424B4</span>
+          </div>
+          <p className="text-sm text-gray-500 mb-6 bg-blue-50 p-3 rounded border border-blue-100">
+             <strong>Investor Note:</strong> Filing an Initial Project Offering (IPO) lists a new asset on the CodeStreet exchange.
+             Set your initial valuation carefully to attract early backers.
+          </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -469,20 +479,21 @@ const Board = () => {
                 </p>
             </div>
 
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
                 <button
                     type="button"
                     onClick={() => setShowForm(false)}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
                 >
-                    Cancel
+                    Withdraw Filing
                 </button>
                 <button
                     type="submit"
                     disabled={submitting}
-                    className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50"
+                    className="px-4 py-2 text-sm font-bold text-white bg-emerald-600 rounded-md hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2 shadow-lg hover:shadow-emerald-500/30 transition-all"
                 >
-                    {submitting ? 'Launch IPO' : 'Launch IPO'}
+                    {submitting ? 'Underwriting...' : 'List on Exchange'}
+                    <TrendingUp className="w-4 h-4" />
                 </button>
             </div>
           </form>
