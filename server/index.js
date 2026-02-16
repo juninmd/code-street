@@ -302,6 +302,41 @@ app.post('/api/features/:id/panic', async (req, res) => {
     }
 });
 
+// Market Maker Simulation (Inject Liquidity)
+app.post('/api/market/simulate', async (req, res) => {
+    try {
+        const features = await dbAll('SELECT id, title, pledged_amount, votes FROM features');
+        if (features.length === 0) {
+            res.status(404).json({ error: 'No features to trade' });
+            return;
+        }
+
+        // Randomly select a feature
+        const feature = features[Math.floor(Math.random() * features.length)];
+        const amount = Math.floor(Math.random() * 490) + 10; // $10 - $500
+        const voteCount = Math.floor(Math.random() * 50) + 1;
+
+        // Execute Trade
+        await dbRun('INSERT INTO pledges (feature_id, amount) VALUES (?, ?)', [feature.id, amount]);
+        await dbRun('UPDATE features SET pledged_amount = pledged_amount + ?, votes = votes + ? WHERE id = ?', [amount, voteCount, feature.id]);
+
+        // Fetch updated data
+        const updatedFeature = await dbGet('SELECT * FROM features WHERE id = ?', [feature.id]);
+
+        res.json({
+            message: 'Market Maker Executed Trade',
+            data: {
+                feature: updatedFeature.title,
+                amount_invested: amount,
+                votes_added: voteCount,
+                new_total: updatedFeature.pledged_amount
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

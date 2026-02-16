@@ -58,36 +58,6 @@ const Board = () => {
     fetchStats();
   }, [selectedCategory]);
 
-  // Whale Watcher Simulation
-  useEffect(() => {
-    const interval = setInterval(() => {
-        if (features.length > 0 && Math.random() > 0.7) {
-            const randomFeature = features[Math.floor(Math.random() * features.length)];
-            const randomAmount = Math.floor(Math.random() * 500) + 100;
-
-            const div = document.createElement('div');
-            div.className = 'fixed bottom-20 left-4 sm:bottom-4 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-2xl animate-fade-in-up z-50 flex items-center gap-3 border border-gray-700 max-w-xs sm:max-w-sm';
-            div.innerHTML = `
-                <div class="bg-yellow-500 rounded-full p-1.5 animate-pulse">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5c0-5.523 4.477-10 10-10z"></path><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-5-2-5-3S3.5 10.5 3.5 12a2.5 2.5 0 0 0 2.5 2.5"></path><path d="M9 10a1 1 0 1 1-2 0"></path></svg>
-                </div>
-                <div>
-                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Whale Alert 🐳</p>
-                    <p class="text-xs sm:text-sm font-bold">Someone bought <span class="text-emerald-400">${Math.floor(randomAmount/10)} shares</span> of ${randomFeature.ticker || randomFeature.title}</p>
-                </div>
-            `;
-            document.body.appendChild(div);
-            setTimeout(() => {
-                div.style.opacity = '0';
-                div.style.transform = 'translateY(20px)';
-                div.style.transition = 'all 0.5s';
-                setTimeout(() => div.remove(), 500);
-            }, 4000);
-        }
-    }, 8000);
-    return () => clearInterval(interval);
-  }, [features]);
-
   const simulateAiEstimation = () => {
       const text = newFeature.description || '';
       const title = newFeature.title || '';
@@ -513,12 +483,13 @@ const Board = () => {
         <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
             <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ticker</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset</th>
-                <th className="hidden sm:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sector</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Share Price</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Vol (Votes)</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                <th className="px-6 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Ticker</th>
+                <th className="px-6 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Asset</th>
+                <th className="hidden sm:table-cell px-6 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Sector</th>
+                <th className="px-6 py-2 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Price</th>
+                <th className="px-6 py-2 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Mkt Cap</th>
+                <th className="px-6 py-2 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Volume (Votes)</th>
+                <th className="px-6 py-2 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Trade</th>
             </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -533,31 +504,31 @@ const Board = () => {
                     onClick={() => navigate(`/feature/${feature.id}`)}
                     className={`hover:bg-gray-50 cursor-pointer transition-colors ${feature.is_boosted ? 'bg-yellow-50/30' : ''}`}
                 >
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-2 whitespace-nowrap">
                         <div className="flex items-center">
-                            <div className={`flex-shrink-0 h-8 w-8 rounded flex items-center justify-center text-xs font-bold text-white ${
-                                feature.category === 'AI' ? 'bg-indigo-500' :
-                                feature.category === 'Mobile' ? 'bg-purple-500' :
-                                feature.category === 'Frontend' ? 'bg-emerald-500' :
-                                feature.category === 'Backend' ? 'bg-blue-500' : 'bg-gray-500'
+                            <div className={`flex-shrink-0 h-6 w-12 rounded flex items-center justify-center text-xs font-bold font-mono text-white ${
+                                feature.category === 'AI' ? 'bg-indigo-600' :
+                                feature.category === 'Mobile' ? 'bg-purple-600' :
+                                feature.category === 'Frontend' ? 'bg-emerald-600' :
+                                feature.category === 'Backend' ? 'bg-blue-600' : 'bg-gray-600'
                             }`}>
                                 {feature.ticker || feature.title.substring(0,3).toUpperCase()}
                             </div>
                             {!!feature.is_boosted && <Zap className="w-3 h-3 ml-1 text-yellow-500" />}
                         </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-2">
                         <div className="flex flex-col">
-                            <span className="text-sm font-medium text-gray-900 line-clamp-1">{feature.title}</span>
+                            <span className="text-sm font-bold text-gray-900 line-clamp-1">{feature.title}</span>
                             <span className="text-xs text-gray-500 line-clamp-1 hidden sm:block">{feature.description}</span>
                         </div>
                     </td>
-                    <td className="hidden sm:table-cell px-6 py-4 whitespace-nowrap">
+                    <td className="hidden sm:table-cell px-6 py-2 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 capitalize">
                         {feature.category}
                         </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <td className="px-6 py-2 whitespace-nowrap text-right">
                         <div className="text-sm font-mono font-bold text-emerald-600">
                             ${(feature.current_price || 1.00).toFixed(2)}
                         </div>
@@ -565,10 +536,13 @@ const Board = () => {
                            {(feature.day_change || 0) >= 0 ? '+' : ''}{(feature.day_change || 0)}%
                         </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 font-mono">
+                    <td className="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-900 font-mono font-bold">
+                        ${((feature.votes * (feature.current_price || 1)).toLocaleString(undefined, { maximumFractionDigits: 0 }))}
+                    </td>
+                    <td className="px-6 py-2 whitespace-nowrap text-right text-sm text-gray-500 font-mono">
                         {feature.votes.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-2 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                             <button
                                 onClick={(e) => handleVote(e, feature.id)}
