@@ -1,35 +1,74 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp } from 'lucide-react';
+import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { format } from 'date-fns';
 
 const AdminWealth = () => {
   const [stats, setStats] = useState(null);
   const [recentPledges, setRecentPledges] = useState([]);
+  const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [transferred, setTransferred] = useState(false);
+  const [botActive, setBotActive] = useState(false);
+  const [marketAction, setMarketAction] = useState(null);
+
+  const fetchData = async () => {
+    try {
+      const [statsRes, pledgesRes, featuresRes] = await Promise.all([
+          fetch('/api/stats'),
+          fetch('/api/pledges/recent'),
+          fetch('/api/features')
+      ]);
+      const statsJson = await statsRes.json();
+      const pledgesJson = await pledgesRes.json();
+      const featuresJson = await featuresRes.json();
+
+      setStats(statsJson);
+      setRecentPledges(pledgesJson.data || []);
+      setFeatures(featuresJson.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsRes, pledgesRes] = await Promise.all([
-            fetch('/api/stats'),
-            fetch('/api/pledges/recent')
-        ]);
-        const statsJson = await statsRes.json();
-        const pledgesJson = await pledgesRes.json();
-
-        setStats(statsJson);
-        setRecentPledges(pledgesJson.data || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  // Market Maker Bot
+  useEffect(() => {
+      let interval;
+      if (botActive) {
+          interval = setInterval(() => {
+              handleInjectLiquidity(true);
+          }, 3000); // Trade every 3 seconds
+      }
+      return () => clearInterval(interval);
+  }, [botActive]);
+
+  const handleInjectLiquidity = async (silent = false) => {
+      try {
+          const res = await fetch('/api/market/simulate', { method: 'POST' });
+          if (res.ok) {
+              const json = await res.json();
+              setMarketAction(json.data);
+              fetchData(); // Refresh data
+              if (!silent) {
+                  confetti({
+                      particleCount: 50,
+                      spread: 60,
+                      origin: { x: 0.9, y: 0.1 },
+                      colors: ['#10B981', '#34D399']
+                  });
+              }
+          }
+      } catch (err) {
+          console.error("Market Maker failed", err);
+      }
+  };
 
   const handleCashOut = () => {
     if (stats?.platform_revenue <= 0) return;
@@ -141,6 +180,88 @@ const AdminWealth = () => {
           </div>
            <p className="text-xs text-gray-400">Based on current monthly run rate.</p>
         </div>
+      </div>
+
+      {/* Insider & Market Maker Dashboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Market Maker Controls */}
+          <div className="bg-gray-800 rounded-xl p-6 text-white border border-gray-700 shadow-xl">
+              <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold flex items-center gap-2 text-emerald-400">
+                      <Zap className="w-5 h-5" />
+                      Market Maker Algo
+                  </h3>
+                  <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${botActive ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                      <span className="text-xs font-mono uppercase text-gray-400">{botActive ? 'HFT ACTIVE' : 'OFFLINE'}</span>
+                  </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                 <button
+                    onClick={() => handleInjectLiquidity(false)}
+                    className="bg-gray-700 hover:bg-gray-600 border border-gray-600 p-4 rounded-lg flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                 >
+                     <Activity className="w-6 h-6 text-blue-400" />
+                     <span className="font-bold text-sm">Inject Liquidity</span>
+                 </button>
+                 <button
+                    onClick={() => setBotActive(!botActive)}
+                    className={`${botActive ? 'bg-red-900/50 border-red-500/50' : 'bg-emerald-900/50 border-emerald-500/50'} border p-4 rounded-lg flex flex-col items-center justify-center gap-2 transition-all hover:scale-105`}
+                 >
+                     {botActive ? <Pause className="w-6 h-6 text-red-400" /> : <Play className="w-6 h-6 text-emerald-400" />}
+                     <span className="font-bold text-sm">{botActive ? 'Stop Bot' : 'Start Auto-Bot'}</span>
+                 </button>
+              </div>
+
+              <div className="bg-black/50 rounded-lg p-4 font-mono text-xs h-32 overflow-hidden relative">
+                  <div className="absolute top-2 right-2 text-gray-600">TERMINAL_OUTPUT</div>
+                  {marketAction ? (
+                      <div className="space-y-1 animate-fade-in">
+                          <p className="text-emerald-400">&gt; ORDER EXECUTED</p>
+                          <p className="text-gray-300">ASSET: {marketAction.feature}</p>
+                          <p className="text-gray-300">CAPITAL: ${marketAction.amount_invested}</p>
+                          <p className="text-gray-300">VOTES: +{marketAction.votes_added}</p>
+                          <p className="text-gray-500">------------------</p>
+                      </div>
+                  ) : (
+                      <p className="text-gray-500">&gt; Waiting for orders...</p>
+                  )}
+              </div>
+          </div>
+
+          {/* Insider Trading / Undervalued Assets */}
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <h3 className="text-xl font-bold flex items-center gap-2 text-gray-900 mb-6">
+                  <Crosshair className="w-5 h-5 text-red-600" />
+                  Insider Analytics
+              </h3>
+              <p className="text-sm text-gray-500 mb-4">Top undervalued assets. High demand (Votes), low capitalization.</p>
+
+              <div className="space-y-3">
+                  {features
+                      .filter(f => f.votes > 0)
+                      .map(f => ({ ...f, ratio: f.votes / ((f.pledged_amount || 0) + 1) }))
+                      .sort((a, b) => b.ratio - a.ratio)
+                      .slice(0, 3)
+                      .map((item, idx) => (
+                      <div key={item.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <div className="flex items-center gap-3">
+                              <span className="font-mono font-bold text-gray-400">#{idx + 1}</span>
+                              <div>
+                                  <p className="font-bold text-gray-900 text-sm">{item.title}</p>
+                                  <p className="text-xs text-gray-500">{item.votes} Votes / ${item.pledged_amount || 0}</p>
+                              </div>
+                          </div>
+                          <div className="text-right">
+                              <span className="block text-xs font-bold text-emerald-600 uppercase tracking-wider">Strong Buy</span>
+                              <span className="text-xs text-gray-400">Ratio: {item.ratio.toFixed(1)}</span>
+                          </div>
+                      </div>
+                  ))}
+                  {features.length === 0 && <p className="text-gray-400 text-sm">Not enough market data.</p>}
+              </div>
+          </div>
       </div>
 
       {/* Recent Transactions Table */}

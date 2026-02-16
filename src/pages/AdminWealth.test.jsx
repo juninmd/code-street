@@ -28,6 +28,11 @@ describe('AdminWealth', () => {
                 json: () => Promise.resolve({ data: [] })
             });
         }
+        if (url === '/api/features') {
+            return Promise.resolve({
+                json: () => Promise.resolve({ data: [] })
+            });
+        }
     });
 
     await act(async () => {
