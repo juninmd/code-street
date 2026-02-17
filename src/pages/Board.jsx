@@ -346,6 +346,8 @@ const Board = () => {
           <p className="text-sm text-gray-500 mb-6 bg-blue-50 p-3 rounded border border-blue-100">
              <strong>Investor Note:</strong> Filing an Initial Project Offering (IPO) lists a new asset on the CodeStreet exchange.
              Set your initial valuation carefully to attract early backers.
+             <br/><br/>
+             <span className="text-xs font-mono text-red-600 font-bold uppercase">Listing Fee: $50.00 (Deducted from seed capital)</span>
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
