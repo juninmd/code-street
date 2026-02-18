@@ -38,8 +38,37 @@ app.get('/api/features', async (req, res) => {
   sql += ' ORDER BY is_boosted DESC, votes DESC';
 
   try {
-    const rows = await dbAll(sql, params);
+    const [rows, recentPledges] = await Promise.all([
+        dbAll(sql, params),
+        dbAll('SELECT feature_id, amount, created_at FROM pledges ORDER BY created_at DESC LIMIT 1000')
+    ]);
+
     const data = rows.map(row => {
+        // Get recent pledges for this feature to build a sparkline
+        let deltas = recentPledges
+            .filter(p => p.feature_id === row.id)
+            .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+            .map(p => p.amount);
+
+        // Convert deltas to cumulative history for trend line
+        let runningTotal = 0;
+        let history = deltas.map(d => {
+            runningTotal += d;
+            return runningTotal;
+        });
+
+        // If sparse data, fill with deterministic "noise" to look like a chart
+        if (history.length < 5) {
+            let val = (row.pledged_amount || 0) * 0.1;
+            for(let i=0; i<10; i++) {
+                val += Math.sin(row.id * (i+1)) * 5;
+                history.push(Math.abs(val) + 1);
+            }
+        }
+
+        // Take last 20 points
+        history = history.slice(-20);
+
         const pledge = row.pledged_amount || 0;
         const current_price = 1.00 + (row.votes * 0.10) + (pledge * 0.001);
         // Deterministic 24h change based on ID
@@ -49,7 +78,8 @@ app.get('/api/features', async (req, res) => {
             ...row,
             current_price: parseFloat(current_price.toFixed(2)),
             day_change: parseFloat(day_change.toFixed(2)),
-            hype_score: (row.votes * 10) + (pledge * 0.1)
+            hype_score: (row.votes * 10) + (pledge * 0.1),
+            sparkline_data: history
         };
     });
     res.json({ data });
@@ -115,7 +145,42 @@ app.get('/api/stats', async (req, res) => {
         // Revenue = 5% of everything + 100% of Burned items
         stats.platform_revenue = (totalMoney * 0.05) + stats.burned_amount;
 
+        // Mock withdrawals (since payouts table is missing or empty)
+        const totalWithdrawn = 0;
+        stats.total_withdrawn = totalWithdrawn;
+        stats.available_balance = stats.platform_revenue - totalWithdrawn;
+
         res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Market Crash Simulation (The "Surprise")
+app.post('/api/market/crash', async (req, res) => {
+    const CRASH_PERCENT = 0.20;
+    try {
+        const features = await dbAll('SELECT id, pledged_amount FROM features WHERE pledged_amount > 0');
+
+        let totalLost = 0;
+        const promises = features.map(async (f) => {
+            const loss = Math.floor(f.pledged_amount * CRASH_PERCENT);
+            if (loss > 0) {
+                totalLost += loss;
+                // 1. Record negative pledge (Market Correction)
+                await dbRun('INSERT INTO pledges (feature_id, amount) VALUES (?, ?)', [f.id, -loss]);
+                // 2. Update feature
+                await dbRun('UPDATE features SET pledged_amount = pledged_amount - ? WHERE id = ?', [loss, f.id]);
+            }
+        });
+
+        await Promise.all(promises);
+
+        res.json({
+            message: 'MARKET CRASH TRIGGERED',
+            total_value_erased: totalLost,
+            affected_assets: features.length
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -184,6 +249,10 @@ app.post('/api/features/:id/pledge', async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 });
+
+// Mock Payouts API (since table is missing)
+app.get('/api/admin/payouts', (req, res) => res.json({ data: [] }));
+app.post('/api/admin/payout', (req, res) => res.json({ message: 'Payout simulated (Mock)' }));
 
 // Get recent pledges (Global)
 app.get('/api/pledges/recent', async (req, res) => {

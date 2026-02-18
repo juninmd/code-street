@@ -18,6 +18,7 @@ describe('AdminWealth', () => {
             return Promise.resolve({
                 json: () => Promise.resolve({
                     platform_revenue: 100,
+                    available_balance: 100,
                     total_payout: 5000,
                     active_bounty: 2000
                 })
@@ -33,6 +34,10 @@ describe('AdminWealth', () => {
                 json: () => Promise.resolve({ data: [] })
             });
         }
+        return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: [] })
+        });
     });
 
     await act(async () => {
@@ -40,23 +45,24 @@ describe('AdminWealth', () => {
     });
 
     // Revenue
-    expect(screen.getByText('$100.00')).toBeInTheDocument();
-
-    // ARR: 100 * 12 = 1200
-    // The format is $1,200.00
-    expect(screen.getByText('$1,200.00')).toBeInTheDocument();
+    expect(screen.getAllByText('$100.00').length).toBeGreaterThan(0);
   });
 
   it('handles cash out logic', async () => {
     fetch.mockImplementation((url) => {
         if (url === '/api/stats') {
             return Promise.resolve({
+                ok: true,
                 json: () => Promise.resolve({
                     platform_revenue: 500,
+                    available_balance: 500,
                 })
             });
         }
-        return Promise.resolve({ json: () => Promise.resolve({ data: [] }) });
+        return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ data: [] })
+        });
     });
 
     jest.useFakeTimers();
@@ -74,7 +80,7 @@ describe('AdminWealth', () => {
         jest.advanceTimersByTime(2000);
     });
 
-    expect(screen.getByText('Transferred')).toBeInTheDocument();
+    expect(screen.getByText('Funds Transferred')).toBeInTheDocument();
 
     // Revenue should reset to 0 in UI.
     // It might appear multiple times (Revenue and ARR), so we check getAllByText

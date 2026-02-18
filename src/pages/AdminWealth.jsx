@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target, CreditCard, History } from 'lucide-react';
+import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target, CreditCard, History, AlertTriangle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { format } from 'date-fns';
 
@@ -74,6 +74,26 @@ const AdminWealth = () => {
       }
   };
 
+  const handleCrash = async () => {
+      if (!window.confirm("WARNING: This will erase 20% of all market value. Are you sure?")) return;
+
+      try {
+          const res = await fetch('/api/market/crash', { method: 'POST' });
+          const json = await res.json();
+          if (res.ok) {
+               setMarketAction({
+                   feature: "GLOBAL MARKET",
+                   amount_invested: -json.total_value_erased,
+                   votes_added: 0
+               });
+               fetchData();
+               alert(`MARKET CRASHED! Lost $${json.total_value_erased} across ${json.affected_assets} assets.`);
+          }
+      } catch (err) {
+          alert("Crash failed.");
+      }
+  };
+
   const handleCashOut = async () => {
     const amount = stats?.available_balance || 0;
     if (amount <= 0) return;
@@ -104,7 +124,7 @@ const AdminWealth = () => {
   if (loading) return <div className="p-12 text-center text-gray-500 font-mono">Loading Financial Data...</div>;
 
   const revenue = stats?.available_balance || 0;
-  const totalRevenue = stats?.total_revenue || 0;
+  const totalRevenue = stats?.platform_revenue || 0;
   const totalWithdrawn = stats?.total_withdrawn || 0;
 
   return (
@@ -202,7 +222,7 @@ const AdminWealth = () => {
                   </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-3 gap-4 mb-6">
                  <button
                     onClick={() => handleInjectLiquidity(false)}
                     className="bg-gray-700 hover:bg-gray-600 border border-gray-600 p-4 rounded-lg flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
@@ -216,6 +236,13 @@ const AdminWealth = () => {
                  >
                      {botActive ? <Pause className="w-6 h-6 text-red-400" /> : <Play className="w-6 h-6 text-emerald-400" />}
                      <span className="font-bold text-sm">{botActive ? 'Stop Bot' : 'Start Auto-Bot'}</span>
+                 </button>
+                 <button
+                    onClick={handleCrash}
+                    className="bg-red-900 hover:bg-red-800 border border-red-700 p-4 rounded-lg flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                 >
+                     <AlertTriangle className="w-6 h-6 text-red-500 animate-pulse" />
+                     <span className="font-bold text-sm text-red-200">TRIGGER CRASH</span>
                  </button>
               </div>
 

@@ -6,6 +6,7 @@ import MarketInsider from '../components/MarketInsider';
 import ShareBountyModal from '../components/ShareBountyModal';
 import MarketHeatmap from '../components/MarketHeatmap';
 import SniperMode from '../components/SniperMode';
+import Sparkline from '../components/Sparkline';
 import { addToPortfolio } from '../utils/portfolio';
 
 const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
@@ -488,6 +489,7 @@ const Board = () => {
                 <th className="px-6 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Ticker</th>
                 <th className="px-6 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Asset</th>
                 <th className="hidden sm:table-cell px-6 py-2 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Sector</th>
+                <th className="px-6 py-2 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Trend</th>
                 <th className="px-6 py-2 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Price</th>
                 <th className="px-6 py-2 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Mkt Cap</th>
                 <th className="px-6 py-2 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Volume (Votes)</th>
@@ -529,6 +531,9 @@ const Board = () => {
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800 capitalize">
                         {feature.category}
                         </span>
+                    </td>
+                    <td className="px-6 py-2 whitespace-nowrap text-right min-w-[100px]">
+                        <Sparkline data={feature.sparkline_data} />
                     </td>
                     <td className="px-6 py-2 whitespace-nowrap text-right">
                         <div className="text-sm font-mono font-bold text-emerald-600">
