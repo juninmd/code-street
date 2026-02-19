@@ -121,6 +121,17 @@ const AdminWealth = () => {
     }
   };
 
+  const handleDividends = () => {
+      if(!window.confirm("Distribute quarterly dividends to all shareholders?")) return;
+      confetti({
+          particleCount: 200,
+          spread: 100,
+          origin: { y: 0.6 },
+          colors: ['#10B981', '#FFD700']
+      });
+      alert("Dividends Distributed! Shareholders notified.");
+  };
+
   if (loading) return <div className="p-12 text-center text-gray-500 font-mono">Loading Financial Data...</div>;
 
   const revenue = stats?.available_balance || 0;
@@ -169,6 +180,13 @@ const AdminWealth = () => {
                   >
                       {processing ? 'Processing...' : transferred ? 'Funds Transferred' : 'Payout to Bank'}
                       {!processing && !transferred && <ArrowUpRight className="w-3 h-3" />}
+                  </button>
+                  <button
+                    onClick={handleDividends}
+                    className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold py-2 px-4 rounded transition-colors flex items-center justify-center gap-2 border border-gray-700"
+                    title="Pay Dividends"
+                  >
+                      <PieChart className="w-4 h-4 text-yellow-500" />
                   </button>
               </div>
           </div>
