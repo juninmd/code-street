@@ -51,7 +51,7 @@ const Layout = () => {
                   end
                 >
                   <MessageSquare className="w-4 h-4 mr-2" />
-                  Bounties
+                  Exchange
                 </NavLink>
                 <NavLink
                   to="/portfolio"
@@ -77,7 +77,7 @@ const Layout = () => {
                   }
                 >
                   <Briefcase className="w-4 h-4 mr-2" />
-                  Hunter
+                  Talent
                 </NavLink>
                 <NavLink
                   to="/roadmap"
@@ -90,7 +90,7 @@ const Layout = () => {
                   }
                 >
                   <Map className="w-4 h-4 mr-2" />
-                  Roadmap
+                  Futures
                 </NavLink>
                 <NavLink
                   to="/changelog"
@@ -103,7 +103,7 @@ const Layout = () => {
                   }
                 >
                   <PartyPopper className="w-4 h-4 mr-2" />
-                  Delivered
+                  IPO History
                 </NavLink>
               </div>
             </div>
@@ -163,7 +163,7 @@ const Layout = () => {
             end
           >
             <MessageSquare className="w-6 h-6" />
-            <span className="text-xs font-medium">Bounties</span>
+            <span className="text-xs font-medium">Exchange</span>
           </NavLink>
           <NavLink
             to="/portfolio"
@@ -185,7 +185,7 @@ const Layout = () => {
             }
           >
             <Briefcase className="w-6 h-6" />
-            <span className="text-xs font-medium">Hunter</span>
+            <span className="text-xs font-medium">Talent</span>
           </NavLink>
           <NavLink
             to="/roadmap"
@@ -196,7 +196,7 @@ const Layout = () => {
             }
           >
             <Map className="w-6 h-6" />
-            <span className="text-xs font-medium">Roadmap</span>
+            <span className="text-xs font-medium">Futures</span>
           </NavLink>
           <NavLink
             to="/changelog"
@@ -207,7 +207,7 @@ const Layout = () => {
             }
           >
             <PartyPopper className="w-6 h-6" />
-            <span className="text-xs font-medium">Delivered</span>
+            <span className="text-xs font-medium">IPO History</span>
           </NavLink>
         </div>
       </nav>

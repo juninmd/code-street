@@ -4,6 +4,7 @@
   --animate-fade-in-up: fadeInUp 0.5s ease-out forwards;
   --animate-fade-in-down: fadeInDown 0.5s ease-out forwards;
   --animate-pulse-gold: pulseGold 2s infinite;
+  --animate-marquee: marquee 30s linear infinite;
 
   @keyframes fadeInUp {
     from {
@@ -33,6 +34,15 @@
     }
     50% {
       box-shadow: 0 0 0 10px rgba(234, 179, 8, 0);
+    }
+  }
+
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
     }
   }
 }

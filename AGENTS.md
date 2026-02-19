@@ -3,12 +3,12 @@
 This file serves as a context and instruction guide for AI agents working on this repository.
 
 ## Project Context
-**CodeStreet: The Crowdfunded Roadmap Platform (SaaS).**
+**CodeStreet: The AI Asset Exchange.**
 
-This is a serious B2B product management tool.
-- **The Core Product:** A platform where users vote with their wallets. Companies use this to prioritize features based on actual revenue potential.
-- **The "Rich" Factor:** The platform owner (The Admin) collects a 5% fee on all pledges. The "Executive Dashboard" visualizes this wealth accumulation and ARR (Annual Recurring Revenue).
-- **The Surprise:** "Sniper Mode" highlights undervalued features, encouraging users to pledge where their money has the most leverage.
+This is a high-fidelity financial simulation and micro-SaaS marketplace.
+- **The Core Product:** A stock market for "AI Agents". Users invest (pledge) to fund the development of autonomous agents.
+- **The "Rich" Factor:** The platform owner (The Admin) collects a 5% "Underwriting Fee" on all IPOs and trades. The "Executive Dashboard" tracks these dividends.
+- **The Surprise:** A real-time Ticker Tape, "Insider Analytics", and a gamified investment portfolio.
 
 ## Technology Strictures
 - **Frontend:** React 19, Vite, Tailwind CSS (v4). Use functional components and hooks.
@@ -17,9 +17,9 @@ This is a serious B2B product management tool.
 - **Formatting:** Ensure code is clean and readable.
 
 ## Key Components
-- **SniperMode.jsx:** AI-driven feature highlighting.
-- **PaymentModal.jsx:** Simulated payment gateway (Stripe-style).
-- **AdminWealth.jsx:** The "C-Suite" view for tracking SaaS metrics.
+- **LiveTicker.jsx:** Real-time scrolling market data.
+- **SniperMode.jsx:** AI-driven undervalued asset highlighting.
+- **AdminWealth.jsx:** The "Hedge Fund" view for tracking AUM (Assets Under Management).
 - **FeatureDetail.jsx:** The "IPO" page where users buy shares.
 
 ## Protocol
