@@ -145,8 +145,9 @@ app.get('/api/stats', async (req, res) => {
         // Revenue = 5% of everything + 100% of Burned items
         stats.platform_revenue = (totalMoney * 0.05) + stats.burned_amount;
 
-        // Mock withdrawals (since payouts table is missing or empty)
-        const totalWithdrawn = 0;
+        // Withdrawals
+        const payoutSum = await dbGet('SELECT SUM(amount) as val FROM payouts');
+        const totalWithdrawn = payoutSum && payoutSum.val ? payoutSum.val : 0;
         stats.total_withdrawn = totalWithdrawn;
         stats.available_balance = stats.platform_revenue - totalWithdrawn;
 
@@ -250,9 +251,32 @@ app.post('/api/features/:id/pledge', async (req, res) => {
   }
 });
 
-// Mock Payouts API (since table is missing)
-app.get('/api/admin/payouts', (req, res) => res.json({ data: [] }));
-app.post('/api/admin/payout', (req, res) => res.json({ message: 'Payout simulated (Mock)' }));
+// Get all payouts
+app.get('/api/admin/payouts', async (req, res) => {
+    try {
+        const rows = await dbAll('SELECT * FROM payouts ORDER BY created_at DESC, id DESC');
+        res.json({ data: rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Process a payout
+app.post('/api/admin/payout', async (req, res) => {
+    const { amount } = req.body;
+    if (!amount || isNaN(amount) || amount <= 0) {
+        res.status(400).json({ error: 'Valid amount is required' });
+        return;
+    }
+
+    try {
+        const { lastID } = await dbRun('INSERT INTO payouts (amount) VALUES (?)', [amount]);
+        const row = await dbGet('SELECT * FROM payouts WHERE id = ?', [lastID]);
+        res.json({ message: 'Payout processed', data: row });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // Get recent pledges (Global)
 app.get('/api/pledges/recent', async (req, res) => {
