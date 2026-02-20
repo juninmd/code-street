@@ -224,6 +224,14 @@ const Board = () => {
       setProjRevenue('');
       setShowForm(false);
       fetchStats();
+
+      // IPO Celebration
+      confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#10B981', '#34D399', '#059669'] // Emerald shades
+      });
     } catch (err) {
       alert('Error creating IPO');
     } finally {

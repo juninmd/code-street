@@ -108,6 +108,19 @@ db.serialize(() => {
         }
     });
 
+    // Payouts Table (Admin Withdrawals)
+    db.run(`CREATE TABLE IF NOT EXISTS payouts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        amount REAL NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+        if (err) {
+            console.error('Error creating payouts table', err.message);
+        } else {
+            console.log('Payouts table ready.');
+        }
+    });
+
     // Indexes for performance
     db.run('CREATE INDEX IF NOT EXISTS idx_features_status ON features(status)');
     db.run('CREATE INDEX IF NOT EXISTS idx_pledges_feature_id ON pledges(feature_id)');
