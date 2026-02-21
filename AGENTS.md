@@ -25,3 +25,8 @@ This is a high-fidelity financial simulation and micro-SaaS marketplace.
 ## Protocol
 - Always run tests before submitting.
 - Update this file if you learn something new about the codebase.
+
+## PWA Configuration
+- **Vite PWA Plugin:** Used to generate the service worker and manifest.
+- **Offline Strategy:** The app caches assets for offline use.
+- **Installation:** The `Layout.jsx` handles the `beforeinstallprompt` event to show a custom install banner on Android.

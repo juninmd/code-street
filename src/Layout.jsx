@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart } from 'lucide-react';
+import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle } from 'lucide-react';
 import LiveTicker from './components/LiveTicker';
 
 const Layout = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBanner, setShowInstallBanner] = useState(false);
+  const [marketAlert, setMarketAlert] = useState(null);
 
   useEffect(() => {
     const handler = (e) => {
@@ -27,9 +28,44 @@ const Layout = () => {
     setShowInstallBanner(false);
   };
 
+  // Market Volatility Simulator
+  useEffect(() => {
+    const triggerEvent = () => {
+         const events = [
+            { type: 'bull', message: "🚀 BULL RUN! Institutional investors are buying in.", color: "bg-emerald-600" },
+            { type: 'bear', message: "🐻 CORRECTION! Prices dip as servers overheat.", color: "bg-red-600" },
+            { type: 'news', message: "📢 NEWS: TechCrunch just mentioned CodeStreet!", color: "bg-blue-600" },
+            { type: 'whale', message: "🐳 WHALE ALERT: Massive pledge detected.", color: "bg-purple-600" },
+            { type: 'ipo', message: "🔔 IPO ALERT: New feature filing expected soon.", color: "bg-yellow-600" }
+        ];
+
+        // 10% chance of an event happening when scheduled
+        if (Math.random() > 0.3) {
+             const event = events[Math.floor(Math.random() * events.length)];
+             setMarketAlert(event);
+             setTimeout(() => setMarketAlert(null), 6000);
+        }
+    };
+
+    const interval = setInterval(() => {
+        triggerEvent();
+    }, 45000); // Check every 45s
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-gray-50 flex flex-col relative">
       <LiveTicker />
+
+      {/* Market Event Toast */}
+      {marketAlert && (
+          <div className={`fixed top-14 left-1/2 transform -translate-x-1/2 z-[100] ${marketAlert.color} text-white px-6 py-3 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.3)] flex items-center gap-3 animate-in slide-in-from-top-4 duration-500 font-bold border-2 border-white/20`}>
+              <AlertCircle className="w-5 h-5 animate-pulse" />
+              <span className="drop-shadow-md text-sm sm:text-base whitespace-nowrap">{marketAlert.message}</span>
+          </div>
+      )}
+
       {/* Desktop Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 hidden sm:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
