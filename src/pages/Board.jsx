@@ -7,6 +7,7 @@ import ShareBountyModal from '../components/ShareBountyModal';
 import MarketHeatmap from '../components/MarketHeatmap';
 import SniperMode from '../components/SniperMode';
 import Sparkline from '../components/Sparkline';
+import IPOLaunch from '../components/IPOLaunch';
 import { addToPortfolio } from '../utils/portfolio';
 
 const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
@@ -26,6 +27,7 @@ const Board = () => {
   const [projRevenue, setProjRevenue] = useState('');
   const [stats, setStats] = useState({ total_payout: 0, active_bounty: 0 });
   const [submitting, setSubmitting] = useState(false);
+  const [launchedFeature, setLaunchedFeature] = useState(null);
 
   const fetchStats = async () => {
       try {
@@ -232,6 +234,7 @@ const Board = () => {
           origin: { y: 0.6 },
           colors: ['#10B981', '#34D399', '#059669'] // Emerald shades
       });
+      setLaunchedFeature(json.data);
     } catch (err) {
       alert('Error creating IPO');
     } finally {
@@ -341,6 +344,7 @@ const Board = () => {
       {showInsider && <MarketInsider features={features} onClose={() => setShowInsider(false)} />}
       {isSniperMode && <SniperMode features={features} onClose={() => setIsSniperMode(false)} />}
       {shareModalFeature && <ShareBountyModal feature={shareModalFeature} onClose={() => setShareModalFeature(null)} />}
+      {launchedFeature && <IPOLaunch feature={launchedFeature} onClose={() => setLaunchedFeature(null)} />}
 
       {/* Suggestion Form */}
       {showForm && (
@@ -397,8 +401,9 @@ const Board = () => {
             </div>
 
              <div>
-                <label className="block text-sm font-medium text-gray-700">Deadline</label>
+                <label htmlFor="deadline" className="block text-sm font-medium text-gray-700">Deadline</label>
                 <input
+                    id="deadline"
                     type="datetime-local"
                     required
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm p-2 border"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target, CreditCard, History, AlertTriangle } from 'lucide-react';
+import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target, CreditCard, History, AlertTriangle, Bitcoin } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { format } from 'date-fns';
 
@@ -132,6 +132,17 @@ const AdminWealth = () => {
       alert("Dividends Distributed! Shareholders notified.");
   };
 
+  const handleCrypto = () => {
+      if(!window.confirm("Withdraw to Wallet 0x123...abc (BTC)? Gas fees apply.")) return;
+      confetti({
+          particleCount: 200,
+          spread: 100,
+          origin: { y: 0.6 },
+          colors: ['#F7931A', '#ffffff'] // Bitcoin orange
+      });
+      alert("Transaction Broadcasted to Mempool!");
+  };
+
   if (loading) return <div className="p-12 text-center text-gray-500 font-mono">Loading Financial Data...</div>;
 
   const revenue = stats?.available_balance || 0;
@@ -187,6 +198,13 @@ const AdminWealth = () => {
                     title="Pay Dividends"
                   >
                       <PieChart className="w-4 h-4 text-yellow-500" />
+                  </button>
+                  <button
+                    onClick={handleCrypto}
+                    className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-2 px-4 rounded transition-colors flex items-center justify-center gap-2 border border-orange-600"
+                    title="Withdraw to Crypto"
+                  >
+                      <Bitcoin className="w-4 h-4 text-white" />
                   </button>
               </div>
           </div>
