@@ -89,4 +89,20 @@ describe('AdminWealth', () => {
 
     jest.useRealTimers();
   });
+
+  it('triggers crypto withdrawal simulation', async () => {
+    // Mock window.confirm
+    window.confirm = jest.fn(() => true);
+    window.alert = jest.fn();
+
+    await act(async () => {
+        render(<AdminWealth />);
+    });
+
+    const cryptoBtn = screen.getByTitle('Withdraw to Crypto');
+    fireEvent.click(cryptoBtn);
+
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining('Withdraw to Wallet'));
+    expect(window.alert).toHaveBeenCalledWith('Transaction Broadcasted to Mempool!');
+  });
 });
