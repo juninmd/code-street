@@ -9,11 +9,13 @@ import HunterProfile from './pages/HunterProfile';
 import AdminWealth from './pages/AdminWealth';
 import Portfolio from './pages/Portfolio';
 import WhaleAlert from './components/WhaleAlert';
+import DividendAlert from './components/DividendAlert';
 
 function App() {
   return (
     <>
     <WhaleAlert />
+    <DividendAlert />
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Board />} />

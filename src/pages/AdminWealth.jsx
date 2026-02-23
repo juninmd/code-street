@@ -121,15 +121,40 @@ const AdminWealth = () => {
     }
   };
 
-  const handleDividends = () => {
-      if(!window.confirm("Distribute quarterly dividends to all shareholders?")) return;
-      confetti({
-          particleCount: 200,
-          spread: 100,
-          origin: { y: 0.6 },
-          colors: ['#10B981', '#FFD700']
-      });
-      alert("Dividends Distributed! Shareholders notified.");
+  const handleDividends = async () => {
+      const amountPerShare = prompt("Enter dividend amount per share ($):", "0.50");
+      if (!amountPerShare) return;
+
+      const val = parseFloat(amountPerShare);
+      if (isNaN(val) || val <= 0) {
+          alert("Invalid amount");
+          return;
+      }
+
+      if(!window.confirm(`Distribute $${val} per share to all shareholders?`)) return;
+
+      try {
+          const res = await fetch('/api/market/dividends', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ amount_per_share: val })
+          });
+
+          if (res.ok) {
+            confetti({
+                particleCount: 200,
+                spread: 100,
+                origin: { y: 0.6 },
+                colors: ['#10B981', '#FFD700']
+            });
+            alert("Dividends Distributed! Shareholders notified.");
+          } else {
+              alert("Failed to distribute dividends.");
+          }
+      } catch (err) {
+          console.error(err);
+          alert("Error connecting to server.");
+      }
   };
 
   const handleCrypto = () => {

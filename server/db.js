@@ -121,6 +121,20 @@ db.serialize(() => {
         }
     });
 
+    // Dividends Table (User Payouts)
+    db.run(`CREATE TABLE IF NOT EXISTS dividends (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        amount_per_share REAL NOT NULL,
+        total_distributed REAL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+        if (err) {
+            console.error('Error creating dividends table', err.message);
+        } else {
+            console.log('Dividends table ready.');
+        }
+    });
+
     // Indexes for performance
     db.run('CREATE INDEX IF NOT EXISTS idx_features_status ON features(status)');
     db.run('CREATE INDEX IF NOT EXISTS idx_pledges_feature_id ON pledges(feature_id)');
