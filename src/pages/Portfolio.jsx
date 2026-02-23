@@ -45,8 +45,10 @@ const Portfolio = () => {
         const totalGainLoss = totalEquity - totalCostBasis;
         const assetCount = enriched.length;
 
+      const cashBalance = parseFloat(localStorage.getItem('cash_balance') || '0');
+
         setPortfolioData(enriched);
-        setStats({ totalEquity, totalCostBasis, totalGainLoss, assetCount });
+      setStats({ totalEquity, totalCostBasis, totalGainLoss, assetCount, cashBalance });
       } catch (err) {
         console.error(err);
       } finally {
@@ -101,8 +103,12 @@ const Portfolio = () => {
               <h2 className={`text-4xl font-bold flex items-baseline gap-1 ${stats.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {stats.totalGainLoss >= 0 ? '+' : ''}{stats.totalGainLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h2>
-               <div className="mt-4 flex items-center text-sm text-gray-500">
-                  <span>Total Return on Investment</span>
+               <div className="mt-4 flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Total ROI</span>
+                  <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded text-xs flex items-center gap-1">
+                      <DollarSign className="w-3 h-3" />
+                      Cash: ${stats.cashBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}
+                  </span>
               </div>
           </div>
 

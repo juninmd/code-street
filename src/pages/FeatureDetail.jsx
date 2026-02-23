@@ -8,6 +8,7 @@ import PriceChart from '../components/PriceChart';
 import AnalystRating from '../components/AnalystRating';
 import PaymentModal from '../components/PaymentModal';
 import { addToPortfolio } from '../utils/portfolio';
+import { triggerHaptic } from '../utils/haptics';
 
 const FeatureDetail = () => {
   const { id } = useParams();
@@ -66,6 +67,7 @@ const FeatureDetail = () => {
 
   const handleVote = async () => {
     if (!feature) return;
+    triggerHaptic('notification');
     // For voting, we just add 0 shares to track it
     addToPortfolio(id, 0, feature.current_price || 0);
     showToast('💼 Added to Watchlist');
@@ -137,6 +139,7 @@ const FeatureDetail = () => {
               const shares = parseFloat(pledgeAmount) / (feature.current_price || 1);
               addToPortfolio(id, shares, feature.current_price || 1);
               showToast(`🚀 Bought ${shares.toFixed(2)} Shares!`);
+              triggerHaptic('success');
 
               confetti({
                   particleCount: 150,

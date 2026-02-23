@@ -278,6 +278,35 @@ app.post('/api/admin/payout', async (req, res) => {
     }
 });
 
+// Distribute Dividends (Admin)
+app.post('/api/market/dividends', async (req, res) => {
+    const { amount_per_share } = req.body;
+    if (!amount_per_share || isNaN(amount_per_share) || amount_per_share <= 0) {
+        res.status(400).json({ error: 'Valid amount per share is required' });
+        return;
+    }
+
+    try {
+        // Calculate total distributed (approximate based on total pledged / avg price - simplified for now)
+        // For simulation, we just track the per-share amount. The client calculates their own cut.
+        const { lastID } = await dbRun('INSERT INTO dividends (amount_per_share) VALUES (?)', [amount_per_share]);
+        const row = await dbGet('SELECT * FROM dividends WHERE id = ?', [lastID]);
+        res.json({ message: 'Dividends Distributed', data: row });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get Latest Dividends
+app.get('/api/market/dividends', async (req, res) => {
+    try {
+        const rows = await dbAll('SELECT * FROM dividends ORDER BY created_at DESC LIMIT 5');
+        res.json({ data: rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Get recent pledges (Global)
 app.get('/api/pledges/recent', async (req, res) => {
     const sql = `

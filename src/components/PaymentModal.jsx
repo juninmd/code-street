@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CreditCard, Lock, CheckCircle, X } from 'lucide-react';
+import { triggerHaptic } from '../utils/haptics';
 
 const PaymentModal = ({ amount, onConfirm, onClose }) => {
   const [processing, setProcessing] = useState(false);
@@ -16,6 +17,7 @@ const PaymentModal = ({ amount, onConfirm, onClose }) => {
     setTimeout(() => {
         setProcessing(false);
         setStep(2);
+        triggerHaptic('heavy');
 
         // Auto-close after success
         setTimeout(() => {
