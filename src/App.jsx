@@ -10,10 +10,12 @@ import AdminWealth from './pages/AdminWealth';
 import Portfolio from './pages/Portfolio';
 import WhaleAlert from './components/WhaleAlert';
 import DividendAlert from './components/DividendAlert';
+import NewsTicker from './components/NewsTicker';
 
 function App() {
   return (
     <>
+    <NewsTicker />
     <WhaleAlert />
     <DividendAlert />
     <Routes>

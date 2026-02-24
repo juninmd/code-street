@@ -13,6 +13,8 @@ const AdminWealth = () => {
   const [transferred, setTransferred] = useState(false);
   const [botActive, setBotActive] = useState(false);
   const [marketAction, setMarketAction] = useState(null);
+  const [showProfit, setShowProfit] = useState(false);
+  const [profitAmount, setProfitAmount] = useState(0);
 
   const fetchData = async () => {
     try {
@@ -59,6 +61,13 @@ const AdminWealth = () => {
           if (res.ok) {
               const json = await res.json();
               setMarketAction(json.data);
+
+              // Calculate fee from the trade (5%)
+              const fee = (json.data.amount_invested || 0) * 0.05;
+              setProfitAmount(fee);
+              setShowProfit(true);
+              setTimeout(() => setShowProfit(false), 2000);
+
               fetchData(); // Refresh data
               if (!silent) {
                   confetti({
@@ -205,8 +214,13 @@ const AdminWealth = () => {
           </div>
           <div className="relative z-10">
               <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Liquid Assets (Available)</p>
-              <h2 className="text-4xl font-mono font-bold text-emerald-400">
+              <h2 className="text-4xl font-mono font-bold text-emerald-400 relative inline-block">
                 ${revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {showProfit && (
+                    <span className="absolute -top-8 -right-12 text-lg text-emerald-300 font-bold animate-bounce bg-emerald-900/80 px-2 py-1 rounded shadow border border-emerald-500">
+                        +${profitAmount.toFixed(2)}
+                    </span>
+                )}
               </h2>
               <div className="mt-4 flex gap-2">
                   <button

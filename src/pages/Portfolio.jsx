@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingUp, DollarSign, PieChart, Activity, AlertTriangle, ArrowRight } from 'lucide-react';
 import { getPortfolio } from '../utils/portfolio';
+import Sparkline from '../components/Sparkline';
 
 const Portfolio = () => {
   const [loading, setLoading] = useState(true);
   const [portfolioData, setPortfolioData] = useState([]);
+  const [history, setHistory] = useState([]);
   const [stats, setStats] = useState({
       totalEquity: 0,
       totalCostBasis: 0,
@@ -45,10 +47,20 @@ const Portfolio = () => {
         const totalGainLoss = totalEquity - totalCostBasis;
         const assetCount = enriched.length;
 
-      const cashBalance = parseFloat(localStorage.getItem('cash_balance') || '0');
+        // Generate fake history for the sparkline (since we don't store portfolio snapshots)
+        const fakeHistory = [];
+        let val = totalEquity * 0.9;
+        for(let i=0; i<20; i++) {
+            fakeHistory.push(val);
+            val += (Math.random() - 0.4) * (totalEquity * 0.05); // Random walk
+        }
+        fakeHistory.push(totalEquity);
+        setHistory(fakeHistory);
+
+        const cashBalance = parseFloat(localStorage.getItem('cash_balance') || '0');
 
         setPortfolioData(enriched);
-      setStats({ totalEquity, totalCostBasis, totalGainLoss, assetCount, cashBalance });
+        setStats({ totalEquity, totalCostBasis, totalGainLoss, assetCount, cashBalance });
       } catch (err) {
         console.error(err);
       } finally {
@@ -87,12 +99,19 @@ const Portfolio = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gray-900 rounded-xl p-6 text-white shadow-xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-emerald-500/30 transition-all"></div>
-              <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-2">Total Equity</p>
-              <h2 className="text-4xl font-bold flex items-baseline gap-1">
-                  <span className="text-emerald-400">$</span>
-                  {stats.totalEquity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </h2>
-              <div className="mt-4 flex items-center text-sm text-emerald-400">
+              <div className="flex justify-between items-start relative z-10">
+                  <div>
+                    <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-2">Total Equity</p>
+                    <h2 className="text-4xl font-bold flex items-baseline gap-1">
+                        <span className="text-emerald-400">$</span>
+                        {stats.totalEquity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </h2>
+                  </div>
+                  <div className="w-24">
+                      <Sparkline data={history} />
+                  </div>
+              </div>
+              <div className="mt-4 flex items-center text-sm text-emerald-400 relative z-10">
                   <TrendingUp className="w-4 h-4 mr-1" />
                   <span>Current Market Value</span>
               </div>

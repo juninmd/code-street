@@ -9,6 +9,7 @@ import SniperMode from '../components/SniperMode';
 import Sparkline from '../components/Sparkline';
 import IPOLaunch from '../components/IPOLaunch';
 import { addToPortfolio } from '../utils/portfolio';
+import { triggerHaptic } from '../utils/haptics';
 
 const CATEGORIES = ['All', 'Frontend', 'Backend', 'Mobile', 'AI', 'Design'];
 
@@ -78,6 +79,7 @@ const Board = () => {
   const handleVote = async (e, id) => {
     e.preventDefault(); // Prevent navigation
     e.stopPropagation();
+    triggerHaptic('click');
 
     // Use current_price from features list or default to 1
     const feat = features.find(f => f.id === id);
@@ -115,6 +117,7 @@ const Board = () => {
   const handleBoost = async (e, id) => {
       e.preventDefault();
       e.stopPropagation();
+      triggerHaptic('notification');
 
       // Simulation of payment
       if(!window.confirm("Boost this bounty for $10? This makes it stick to the top!")) return;
@@ -141,6 +144,7 @@ const Board = () => {
   const handlePanic = async (e, id) => {
       e.preventDefault();
       e.stopPropagation();
+      triggerHaptic('notification');
 
       if(!window.confirm("PANIC MODE: Extend deadline by 24h for $5 fee?")) return;
 
@@ -185,6 +189,7 @@ const Board = () => {
   };
 
   const handleReferral = () => {
+      triggerHaptic('success');
       // Simulation of referral link generation
       const code = Math.random().toString(36).substring(7).toUpperCase();
       navigator.clipboard.writeText(`https://codebounty.app?ref=${code}`);
@@ -227,6 +232,7 @@ const Board = () => {
       setShowForm(false);
       fetchStats();
 
+      triggerHaptic('success');
       // IPO Celebration
       confetti({
           particleCount: 150,
