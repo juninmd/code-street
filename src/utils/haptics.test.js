@@ -17,14 +17,14 @@ describe('triggerHaptic', () => {
     jest.clearAllMocks();
   });
 
-  it('should call vibrate with 50ms for success', () => {
+  it('should call vibrate with pattern for success', () => {
     triggerHaptic('success');
-    expect(vibrateMock).toHaveBeenCalledWith(50);
+    expect(vibrateMock).toHaveBeenCalledWith([50, 50, 50]);
   });
 
   it('should call vibrate with pattern for error', () => {
     triggerHaptic('error');
-    expect(vibrateMock).toHaveBeenCalledWith([50, 50, 50]);
+    expect(vibrateMock).toHaveBeenCalledWith([100, 50, 100, 50, 100]);
   });
 
   it('should call vibrate with 200ms for heavy', () => {
@@ -34,7 +34,7 @@ describe('triggerHaptic', () => {
 
   it('should call vibrate with pattern for notification', () => {
     triggerHaptic('notification');
-    expect(vibrateMock).toHaveBeenCalledWith([100, 50, 100]);
+    expect(vibrateMock).toHaveBeenCalledWith([50, 100, 50]);
   });
 
   it('should not throw if navigator is undefined', () => {
