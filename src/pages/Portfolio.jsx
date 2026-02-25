@@ -1,25 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, DollarSign, PieChart, Activity, AlertTriangle, ArrowRight } from 'lucide-react';
+import { TrendingUp, DollarSign, PieChart, Activity, AlertTriangle, ArrowRight, Wallet } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { getPortfolio } from '../utils/portfolio';
+import { triggerHaptic } from '../utils/haptics';
 import Sparkline from '../components/Sparkline';
 
 const Portfolio = () => {
   const [loading, setLoading] = useState(true);
   const [portfolioData, setPortfolioData] = useState([]);
   const [history, setHistory] = useState([]);
+  const [lastClaimTime, setLastClaimTime] = useState(0);
   const [stats, setStats] = useState({
       totalEquity: 0,
       totalCostBasis: 0,
       totalGainLoss: 0,
-      assetCount: 0
+      assetCount: 0,
+      cashBalance: 0
   });
 
   useEffect(() => {
     const fetchPortfolio = async () => {
       try {
         const holdings = getPortfolio(); // [{id, shares, avgPrice}, ...]
+        const cashBalance = parseFloat(localStorage.getItem('cash_balance') || '0');
+        const lastClaim = parseInt(localStorage.getItem('last_claim_ts') || '0');
+        setLastClaimTime(lastClaim);
+
         if (holdings.length === 0) {
+            setStats(prev => ({ ...prev, cashBalance }));
             setLoading(false);
             return;
         }
@@ -57,8 +66,6 @@ const Portfolio = () => {
         fakeHistory.push(totalEquity);
         setHistory(fakeHistory);
 
-        const cashBalance = parseFloat(localStorage.getItem('cash_balance') || '0');
-
         setPortfolioData(enriched);
         setStats({ totalEquity, totalCostBasis, totalGainLoss, assetCount, cashBalance });
       } catch (err) {
@@ -70,6 +77,39 @@ const Portfolio = () => {
 
     fetchPortfolio();
   }, []);
+
+  const handleClaimDividend = () => {
+      const now = Date.now();
+
+      if (now - lastClaimTime < 86400000) {
+          triggerHaptic('error');
+          alert("Dividends are paid every 24 hours. Check back later.");
+          return;
+      }
+
+      // 1% daily yield on Total Equity (min $10 if no equity)
+      const dividend = Math.max(10, stats.totalEquity * 0.01);
+
+      const newBalance = (stats.cashBalance || 0) + dividend;
+      localStorage.setItem('cash_balance', newBalance.toString());
+      localStorage.setItem('last_claim_ts', now.toString());
+
+      setStats(prev => ({ ...prev, cashBalance: newBalance }));
+      setLastClaimTime(now);
+
+      triggerHaptic('success');
+      confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#10B981', '#FFD700']
+      });
+  };
+
+  const timeUntilClaim = Math.max(0, 86400000 - (Date.now() - lastClaimTime));
+  const hours = Math.floor(timeUntilClaim / (1000 * 60 * 60));
+  const minutes = Math.floor((timeUntilClaim % (1000 * 60 * 60)) / (1000 * 60));
+  const canClaim = timeUntilClaim === 0;
 
   if (loading) {
       return (
@@ -89,9 +129,23 @@ const Portfolio = () => {
             </h1>
             <p className="text-gray-500">Track your equity in the CodeStreet ecosystem.</p>
         </div>
-        <div className="bg-emerald-50 text-emerald-800 px-4 py-2 rounded-full text-xs font-bold border border-emerald-100 flex items-center">
-            <Activity className="w-4 h-4 mr-2" />
-            MARKET OPEN
+        <div className="flex items-center gap-4">
+             <button
+                onClick={handleClaimDividend}
+                disabled={!canClaim}
+                className={`px-4 py-2 rounded-lg font-bold text-sm shadow-lg flex items-center gap-2 transition-all ${
+                    canClaim
+                    ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 hover:scale-105 animate-pulse'
+                    : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                }`}
+             >
+                 <Wallet className="w-4 h-4" />
+                 {canClaim ? 'Claim Daily Dividend' : `Next Payout: ${hours}h ${minutes}m`}
+             </button>
+            <div className="bg-emerald-50 text-emerald-800 px-4 py-2 rounded-full text-xs font-bold border border-emerald-100 flex items-center">
+                <Activity className="w-4 h-4 mr-2" />
+                MARKET OPEN
+            </div>
         </div>
       </div>
 
@@ -117,16 +171,18 @@ const Portfolio = () => {
               </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <p className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-2">Unrealized P&L</p>
-              <h2 className={`text-4xl font-bold flex items-baseline gap-1 ${stats.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {stats.totalGainLoss >= 0 ? '+' : ''}{stats.totalGainLoss.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-4 opacity-5">
+                   <DollarSign className="w-24 h-24 text-emerald-600" />
+               </div>
+              <p className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-2">Liquid Cash</p>
+              <h2 className="text-4xl font-bold text-gray-900 flex items-baseline gap-1">
+                  ${stats.cashBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h2>
                <div className="mt-4 flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Total ROI</span>
-                  <span className="text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded text-xs flex items-center gap-1">
-                      <DollarSign className="w-3 h-3" />
-                      Cash: ${stats.cashBalance?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || '0.00'}
+                  <span className="text-gray-500">Unrealized P&L:</span>
+                  <span className={`font-bold ${stats.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                       {stats.totalGainLoss >= 0 ? '+' : ''}{stats.totalGainLoss.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </span>
               </div>
           </div>
