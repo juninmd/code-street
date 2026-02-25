@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target, CreditCard, History, AlertTriangle, Bitcoin } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { format } from 'date-fns';
+import { triggerHaptic } from '../utils/haptics';
 
 const AdminWealth = () => {
   const [stats, setStats] = useState(null);
@@ -15,6 +16,7 @@ const AdminWealth = () => {
   const [marketAction, setMarketAction] = useState(null);
   const [showProfit, setShowProfit] = useState(false);
   const [profitAmount, setProfitAmount] = useState(0);
+  const [floatingTexts, setFloatingTexts] = useState([]);
 
   const fetchData = async () => {
     try {
@@ -55,6 +57,16 @@ const AdminWealth = () => {
       return () => clearInterval(interval);
   }, [botActive]);
 
+  const addFloatingText = (text) => {
+      const id = Date.now() + Math.random();
+      const x = Math.random() * 60 + 20; // 20-80%
+      const y = Math.random() * 40 + 30; // 30-70%
+      setFloatingTexts(prev => [...prev, { id, text, x, y }]);
+      setTimeout(() => {
+          setFloatingTexts(prev => prev.filter(item => item.id !== id));
+      }, 2000);
+  };
+
   const handleInjectLiquidity = async (silent = false) => {
       try {
           const res = await fetch('/api/market/simulate', { method: 'POST' });
@@ -67,6 +79,9 @@ const AdminWealth = () => {
               setProfitAmount(fee);
               setShowProfit(true);
               setTimeout(() => setShowProfit(false), 2000);
+
+              addFloatingText(`+$${fee.toFixed(2)}`);
+              triggerHaptic('success');
 
               fetchData(); // Refresh data
               if (!silent) {
@@ -84,6 +99,7 @@ const AdminWealth = () => {
   };
 
   const handleCrash = async () => {
+      triggerHaptic('heavy');
       if (!window.confirm("WARNING: This will erase 20% of all market value. Are you sure?")) return;
 
       try {
@@ -108,6 +124,7 @@ const AdminWealth = () => {
     if (amount <= 0) return;
 
     setProcessing(true);
+    triggerHaptic('notification');
     try {
         const res = await fetch('/api/admin/payout', {
             method: 'POST',
@@ -142,6 +159,7 @@ const AdminWealth = () => {
 
       if(!window.confirm(`Distribute $${val} per share to all shareholders?`)) return;
 
+      triggerHaptic('success');
       try {
           const res = await fetch('/api/market/dividends', {
               method: 'POST',
@@ -168,6 +186,7 @@ const AdminWealth = () => {
 
   const handleCrypto = () => {
       if(!window.confirm("Withdraw to Wallet 0x123...abc (BTC)? Gas fees apply.")) return;
+      triggerHaptic('success');
       confetti({
           particleCount: 200,
           spread: 100,
@@ -208,13 +227,27 @@ const AdminWealth = () => {
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {/* Revenue Card (Dark Theme) */}
-        <div className="bg-gray-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden group">
+        <div className="bg-gray-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden group select-none">
           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
               <DollarSign className="w-24 h-24" />
           </div>
+
+          {/* Floating Texts Layer */}
+          <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+             {floatingTexts.map(item => (
+                 <div
+                    key={item.id}
+                    className="absolute text-emerald-300 font-bold text-xl animate-fade-out-up shadow-sm"
+                    style={{ left: `${item.x}%`, top: `${item.y}%` }}
+                 >
+                     {item.text}
+                 </div>
+             ))}
+          </div>
+
           <div className="relative z-10">
               <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Liquid Assets (Available)</p>
-              <h2 className="text-4xl font-mono font-bold text-emerald-400 relative inline-block">
+              <h2 className="text-4xl font-mono font-bold text-emerald-400 relative inline-block transition-all duration-300 transform scale-100">
                 ${revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 {showProfit && (
                     <span className="absolute -top-8 -right-12 text-lg text-emerald-300 font-bold animate-bounce bg-emerald-900/80 px-2 py-1 rounded shadow border border-emerald-500">
