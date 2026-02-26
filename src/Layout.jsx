@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle } from 'lucide-react';
+import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle, User, Activity } from 'lucide-react';
 import LiveTicker from './components/LiveTicker';
+import IPOAlert from './components/IPOAlert';
 
 const Layout = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -57,6 +58,7 @@ const Layout = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col relative">
       <LiveTicker />
+      <IPOAlert />
 
       {/* Market Event Toast */}
       {marketAlert && (
@@ -73,6 +75,10 @@ const Layout = () => {
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
                 <span className="text-xl font-bold text-emerald-600 tracking-tight">CodeStreet</span>
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800">
+                    <Activity className="w-3 h-3 mr-1" />
+                    MARKET: OPEN
+                </span>
               </div>
               <div className="ml-6 flex space-x-8">
                 <NavLink
@@ -141,6 +147,19 @@ const Layout = () => {
                   <PartyPopper className="w-4 h-4 mr-2" />
                   IPO History
                 </NavLink>
+                <NavLink
+                  to="/profile"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive
+                        ? 'border-emerald-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`
+                  }
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Profile
+                </NavLink>
               </div>
             </div>
           </div>
@@ -148,8 +167,12 @@ const Layout = () => {
       </nav>
 
       {/* Mobile Top Bar */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 sm:hidden flex items-center justify-center h-14">
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-10 sm:hidden flex items-center justify-between px-4 h-14">
         <span className="text-lg font-bold text-emerald-600 tracking-tight">CodeStreet</span>
+        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800">
+             <Activity className="w-3 h-3 mr-1" />
+             OPEN
+        </span>
       </nav>
 
       {/* Main Content */}
@@ -224,6 +247,17 @@ const Layout = () => {
             <span className="text-xs font-medium">Talent</span>
           </NavLink>
           <NavLink
+            to="/profile"
+             className={({ isActive }) =>
+              `flex flex-col items-center justify-center space-y-1 ${
+                isActive ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'
+              }`
+            }
+          >
+            <User className="w-6 h-6" />
+            <span className="text-xs font-medium">Profile</span>
+          </NavLink>
+          <NavLink
             to="/roadmap"
             className={({ isActive }) =>
               `flex flex-col items-center justify-center space-y-1 ${
@@ -233,17 +267,6 @@ const Layout = () => {
           >
             <Map className="w-6 h-6" />
             <span className="text-xs font-medium">Futures</span>
-          </NavLink>
-          <NavLink
-            to="/changelog"
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center space-y-1 ${
-                isActive ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'
-              }`
-            }
-          >
-            <PartyPopper className="w-6 h-6" />
-            <span className="text-xs font-medium">IPO History</span>
           </NavLink>
         </div>
       </nav>
