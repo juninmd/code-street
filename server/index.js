@@ -9,6 +9,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Global variable to track the latest IPO timestamp
+let latestIPOTimestamp = Date.now();
+
 // Promisify DB methods
 const dbGet = util.promisify(db.get).bind(db);
 const dbAll = util.promisify(db.all).bind(db);
@@ -118,11 +121,19 @@ app.post('/api/features', async (req, res) => {
         await dbRun('INSERT INTO pledges (feature_id, amount) VALUES (?, ?)', [lastID, pledge]);
     }
 
+    // Update latest IPO timestamp
+    latestIPOTimestamp = Date.now();
+
     const row = await dbGet('SELECT * FROM features WHERE id = ?', [lastID]);
     res.json({ message: 'Feature created', data: row });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// Get Market Status (Latest IPO)
+app.get('/api/market/status', (req, res) => {
+    res.json({ latest_ipo_timestamp: latestIPOTimestamp });
 });
 
 // Get Platform Stats

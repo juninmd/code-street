@@ -11,6 +11,7 @@ import Portfolio from './pages/Portfolio';
 import WhaleAlert from './components/WhaleAlert';
 import DividendAlert from './components/DividendAlert';
 import NewsTicker from './components/NewsTicker';
+import UserProfile from './components/UserProfile';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
         <Route path="feature/:id" element={<FeatureDetail />} />
         <Route path="hunter" element={<HunterProfile />} />
         <Route path="admin/wealth" element={<AdminWealth />} />
+        <Route path="profile" element={<UserProfile />} />
       </Route>
     </Routes>
     </>
