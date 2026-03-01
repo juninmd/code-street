@@ -139,11 +139,13 @@ app.get('/api/market/status', (req, res) => {
 // Get Platform Stats
 app.get('/api/stats', async (req, res) => {
     try {
-        const [payoutRow, activeRow, topCategoryRow, burnedRow] = await Promise.all([
-            dbGet("SELECT SUM(pledged_amount) as val FROM features WHERE status = 'live'"),
-            dbGet("SELECT SUM(pledged_amount) as val FROM features WHERE status != 'live'"),
-            dbGet("SELECT category, SUM(pledged_amount) as total FROM features GROUP BY category ORDER BY total DESC LIMIT 1"),
-            dbGet("SELECT SUM(pledged_amount) as val FROM features WHERE status != 'live' AND deadline < datetime('now')")
+        const [payoutRow, activeRow, topCategoryRow, burnedRow, darkPoolRow, proRevenueRow] = await Promise.all([
+            dbGet("SELECT SUM(pledged_amount) as val FROM features WHERE status = 'live' AND category != 'pro_subscription'"),
+            dbGet("SELECT SUM(pledged_amount) as val FROM features WHERE status != 'live' AND category != 'pro_subscription'"),
+            dbGet("SELECT category, SUM(pledged_amount) as total FROM features WHERE category != 'pro_subscription' GROUP BY category ORDER BY total DESC LIMIT 1"),
+            dbGet("SELECT SUM(pledged_amount) as val FROM features WHERE status != 'live' AND deadline < datetime('now') AND category != 'pro_subscription'"),
+            dbGet("SELECT SUM(amount) as val FROM pledges WHERE is_dark_pool = 1"),
+            dbGet("SELECT SUM(pledged_amount) as val FROM features WHERE category = 'pro_subscription' AND is_burned = 1")
         ]);
 
         const stats = {};
@@ -152,9 +154,22 @@ app.get('/api/stats', async (req, res) => {
         stats.top_category = topCategoryRow ? topCategoryRow.category : 'N/A';
         stats.burned_amount = burnedRow && burnedRow.val ? burnedRow.val : 0;
 
+        const darkPoolTotal = darkPoolRow && darkPoolRow.val ? darkPoolRow.val : 0;
+        const proRevenueTotal = proRevenueRow && proRevenueRow.val ? proRevenueRow.val : 0;
+
         const totalMoney = (stats.total_payout || 0) + (stats.active_bounty || 0);
-        // Revenue = 5% of everything + 100% of Burned items
-        stats.platform_revenue = (totalMoney * 0.05) + stats.burned_amount;
+
+        // Base Revenue = 5% of all pledges
+        let baseRevenue = totalMoney * 0.05;
+
+        // Dark Pool Revenue = Extra 10% on dark pool pledges (total 15%)
+        stats.dark_pool_fees = darkPoolTotal * 0.10;
+
+        // Pro Subscription Revenue
+        stats.pro_revenue = proRevenueTotal;
+
+        // Total Revenue = Base (5%) + Dark Pool Extra (10%) + Burned amounts + Pro Subscriptions (100% of it)
+        stats.platform_revenue = baseRevenue + stats.dark_pool_fees + stats.burned_amount + stats.pro_revenue;
 
         // Withdrawals
         const payoutSum = await dbGet('SELECT SUM(amount) as val FROM payouts');
@@ -163,6 +178,20 @@ app.get('/api/stats', async (req, res) => {
         stats.available_balance = stats.platform_revenue - totalWithdrawn;
 
         res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Pro subscription
+app.post('/api/market/pro-subscription', async (req, res) => {
+    try {
+        const sqlFeature = `INSERT INTO features (title, description, category, status, pledged_amount, is_burned) VALUES (?, ?, ?, ?, ?, ?)`;
+        const result = await dbRun(sqlFeature, ['CodeStreet PRO', 'Pro Subscription', 'pro_subscription', 'live', 99.0, 1]);
+        const newId = result.lastID;
+
+        await dbRun('INSERT INTO pledges (feature_id, amount) VALUES (?, ?)', [newId, 99.0]);
+        res.json({ message: 'Pro subscription purchased', feature_id: newId });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -235,7 +264,7 @@ app.post('/api/features/:id/boost', async (req, res) => {
 // Pledge to a feature
 app.post('/api/features/:id/pledge', async (req, res) => {
   const { id } = req.params;
-  const { amount } = req.body;
+  const { amount, is_dark_pool } = req.body;
 
   if (!amount || isNaN(amount) || amount <= 0) {
       res.status(400).json({ error: 'Valid amount is required' });
@@ -243,11 +272,11 @@ app.post('/api/features/:id/pledge', async (req, res) => {
   }
 
   const sqlFeature = 'UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?';
-  const sqlPledge = 'INSERT INTO pledges (feature_id, amount) VALUES (?, ?)';
+  const sqlPledge = 'INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)';
 
   try {
     // 1. Record the pledge transaction
-    await dbRun(sqlPledge, [id, amount]);
+    await dbRun(sqlPledge, [id, amount, is_dark_pool ? 1 : 0]);
 
     // 2. Update the total amount
     const { changes } = await dbRun(sqlFeature, [amount, id]);

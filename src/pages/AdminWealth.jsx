@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target, CreditCard, History, AlertTriangle, Bitcoin } from 'lucide-react';
+import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target, CreditCard, History, AlertTriangle, Bitcoin, Star } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { format } from 'date-fns';
 import { triggerHaptic } from '../utils/haptics';
@@ -296,6 +296,34 @@ const AdminWealth = () => {
             </h2>
           </div>
           <p className="text-xs text-gray-400">Total fees + seizures collected.</p>
+        </div>
+
+        {/* Premium Revenue Card */}
+        <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden group select-none">
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+              <Star className="w-24 h-24" />
+          </div>
+          <div className="relative z-10">
+              <div className="flex justify-between items-start mb-4">
+                  <div className="p-2 bg-indigo-500/30 rounded-lg backdrop-blur-sm border border-indigo-400/30">
+                      <Star className="w-6 h-6 text-indigo-300" />
+                  </div>
+              </div>
+              <div className="space-y-4">
+                  <div>
+                      <p className="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1">PRO Subscriptions</p>
+                      <h2 className="text-2xl font-mono font-bold text-white">
+                        ${(stats?.pro_revenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </h2>
+                  </div>
+                  <div className="pt-4 border-t border-indigo-500/30">
+                      <p className="text-indigo-200 text-xs font-bold uppercase tracking-wider mb-1">Dark Pool Fees (15%)</p>
+                      <h2 className="text-2xl font-mono font-bold text-white">
+                        ${(stats?.dark_pool_fees || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </h2>
+                  </div>
+              </div>
+          </div>
         </div>
 
         {/* Withdrawn Card */}

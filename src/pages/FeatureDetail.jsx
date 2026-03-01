@@ -125,7 +125,7 @@ const FeatureDetail = () => {
       }
   }
 
-  const handlePledge = async () => {
+  const handlePledge = async (isDarkPool = false) => {
       if (!pledgeAmount || isNaN(pledgeAmount) || pledgeAmount <= 0) return;
 
       setIsPledging(true);
@@ -133,7 +133,7 @@ const FeatureDetail = () => {
           const res = await fetch(`/api/features/${id}/pledge`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ amount: parseFloat(pledgeAmount) })
+              body: JSON.stringify({ amount: parseFloat(pledgeAmount), is_dark_pool: isDarkPool })
           });
           if (res.ok) {
               const shares = parseFloat(pledgeAmount) / (feature.current_price || 1);
