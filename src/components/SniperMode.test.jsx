@@ -5,6 +5,14 @@ import SniperMode from './SniperMode';
 jest.useFakeTimers();
 
 describe('SniperMode', () => {
+  beforeEach(() => {
+    localStorage.setItem('codestreet_pro', 'true');
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   it('identifies the best target based on votes/pledge ratio', async () => {
     const features = [
         { id: 1, title: 'Bad Feature', votes: 10, pledged_amount: 100, current_price: 1 }, // Ratio: 0.1
@@ -32,5 +40,11 @@ describe('SniperMode', () => {
       act(() => {
           jest.advanceTimersByTime(2000);
       });
+  });
+
+  it('shows pro paywall if not pro', () => {
+      localStorage.removeItem('codestreet_pro');
+      render(<SniperMode features={[]} onClose={() => {}} />);
+      expect(screen.getByText('CodeStreet PRO')).toBeInTheDocument();
   });
 });

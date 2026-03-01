@@ -5,8 +5,9 @@ import { triggerHaptic } from '../utils/haptics';
 const PaymentModal = ({ amount, onConfirm, onClose }) => {
   const [processing, setProcessing] = useState(false);
   const [step, setStep] = useState(1); // 1: Input, 2: Success
+  const [isDarkPool, setIsDarkPool] = useState(false);
 
-  const fee = amount * 0.05;
+  const fee = amount * (isDarkPool ? 0.15 : 0.05);
   const total = amount + fee;
 
   const handleSubmit = (e) => {
@@ -21,7 +22,7 @@ const PaymentModal = ({ amount, onConfirm, onClose }) => {
 
         // Auto-close after success
         setTimeout(() => {
-            onConfirm(); // Trigger the actual pledge logic
+            onConfirm(isDarkPool); // Trigger the actual pledge logic with dark pool flag
         }, 1500);
     }, 2000);
   };
@@ -62,9 +63,23 @@ const PaymentModal = ({ amount, onConfirm, onClose }) => {
                     <p className="text-lg font-bold text-gray-900">${amount.toFixed(2)}</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-sm text-gray-500">Platform Fee (5%)</p>
+                    <p className="text-sm text-gray-500">Platform Fee ({isDarkPool ? '15%' : '5%'})</p>
                     <p className="text-lg font-bold text-gray-900">${fee.toFixed(2)}</p>
                 </div>
+            </div>
+
+            <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded border border-gray-200 cursor-pointer" onClick={() => setIsDarkPool(!isDarkPool)}>
+                <input
+                    type="checkbox"
+                    id="darkPoolCheck"
+                    checked={isDarkPool}
+                    onChange={(e) => setIsDarkPool(e.target.checked)}
+                    className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+                    onClick={(e) => e.stopPropagation()}
+                />
+                <label htmlFor="darkPoolCheck" className="text-sm font-medium text-gray-700 cursor-pointer flex-1">
+                    Dark Pool Pledge (Anonymous)
+                </label>
             </div>
 
             <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-100 mb-4 flex justify-between items-center">

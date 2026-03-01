@@ -98,6 +98,7 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         feature_id INTEGER NOT NULL,
         amount REAL NOT NULL,
+        is_dark_pool INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE CASCADE
     )`, (err) => {
@@ -105,6 +106,14 @@ db.serialize(() => {
             console.error('Error creating pledges table', err.message);
         } else {
             console.log('Pledges table ready.');
+            // Add is_dark_pool column to pledges if it doesn't exist
+            db.run('ALTER TABLE pledges ADD COLUMN is_dark_pool INTEGER DEFAULT 0', (err) => {
+                if (err && !err.message.includes('duplicate column')) {
+                    // console.error('Error adding is_dark_pool column', err.message);
+                } else {
+                    console.log('is_dark_pool column ready.');
+                }
+            });
         }
     });
 

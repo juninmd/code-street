@@ -4,8 +4,11 @@ import { Target, Crosshair, TrendingUp, X } from 'lucide-react';
 const SniperMode = ({ features, onClose }) => {
   const [target, setTarget] = useState(null);
   const [scanning, setScanning] = useState(true);
+  const [isPro, setIsPro] = useState(localStorage.getItem('codestreet_pro') === 'true');
+  const [buyingPro, setBuyingPro] = useState(false);
 
   useEffect(() => {
+    if (!isPro) return;
     // Find the "best" target: Highest Vote/Price ratio (Value for Money)
     // Filter out 0 price items to avoid division by zero
     const candidates = features.filter(f => (f.pledged_amount || 0) > 0);
@@ -34,6 +37,27 @@ const SniperMode = ({ features, onClose }) => {
     }, 2000); // Dramatic pause
   }, [features]);
 
+  const handleBuyPro = async () => {
+    setBuyingPro(true);
+    try {
+      const res = await fetch('/api/market/pro-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        localStorage.setItem('codestreet_pro', 'true');
+        setIsPro(true);
+        // Trigger a re-render of useEffect
+        setTarget(null);
+        setScanning(true);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setBuyingPro(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-md animate-fade-in font-mono">
       <div className="absolute top-4 right-4 z-50">
@@ -41,6 +65,22 @@ const SniperMode = ({ features, onClose }) => {
               <X className="w-8 h-8" />
           </button>
       </div>
+
+      {!isPro ? (
+        <div className="max-w-md w-full text-center relative z-10 bg-gray-900 border-2 border-emerald-500 p-8 rounded-xl shadow-[0_0_50px_rgba(16,185,129,0.3)] animate-bounce-in">
+            <h2 className="text-3xl font-black text-emerald-500 mb-4">CodeStreet PRO</h2>
+            <p className="text-gray-300 mb-6 font-sans">Sniper Mode is a premium feature. Upgrade to CodeStreet PRO to instantly identify undervalued assets with high momentum before the rest of the market.</p>
+            <div className="text-5xl font-bold text-white mb-8 font-sans">$99<span className="text-lg text-gray-500">/mo</span></div>
+            <button
+                onClick={handleBuyPro}
+                disabled={buyingPro}
+                className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-lg rounded-lg shadow-lg transform transition-all active:scale-95 disabled:opacity-50"
+            >
+                {buyingPro ? 'Processing...' : 'Upgrade Now'}
+            </button>
+        </div>
+      ) : (
+          <>
 
       {/* Crosshair Overlay */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
@@ -91,6 +131,8 @@ const SniperMode = ({ features, onClose }) => {
              <div className="text-red-500">No targets found. Market is dormant.</div>
           )}
       </div>
+      </>
+      )}
     </div>
   );
 };
