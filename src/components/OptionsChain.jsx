@@ -97,7 +97,7 @@ const OptionsChain = ({ featureId, currentPrice }) => {
                         {options.map((opt, idx) => {
                             const totalCost = parseFloat(opt.premium) * 100;
                             return (
-                            <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                            <tr key={`${opt.type}-${opt.strike}`} className="hover:bg-gray-50 transition-colors">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
                                         opt.type === 'call' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
