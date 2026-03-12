@@ -11,6 +11,8 @@ const Portfolio = () => {
   const [portfolioData, setPortfolioData] = useState([]);
   const [history, setHistory] = useState([]);
   const [lastClaimTime, setLastClaimTime] = useState(0);
+  const [optionsPortfolio, setOptionsPortfolio] = useState([]);
+  const [exercisingId, setExercisingId] = useState(null);
   const [stats, setStats] = useState({
       totalEquity: 0,
       totalCostBasis: 0,
@@ -19,8 +21,7 @@ const Portfolio = () => {
       cashBalance: 0
   });
 
-  useEffect(() => {
-    const fetchPortfolio = async () => {
+  const fetchPortfolio = async () => {
       try {
         const holdings = getPortfolio(); // [{id, shares, avgPrice}, ...]
         const cashBalance = parseFloat(localStorage.getItem('cash_balance') || '0');
@@ -50,6 +51,11 @@ const Portfolio = () => {
             };
         }).filter(Boolean);
 
+        // Fetch Options Portfolio
+        const optRes = await fetch('/api/options/portfolio');
+        const optJson = await optRes.json();
+        setOptionsPortfolio(optJson.data || []);
+
         // Calculate Stats
         const totalEquity = enriched.reduce((acc, curr) => acc + curr.currentValue, 0);
         const totalCostBasis = enriched.reduce((acc, curr) => acc + curr.costBasis, 0);
@@ -73,10 +79,45 @@ const Portfolio = () => {
       } finally {
         setLoading(false);
       }
-    };
+  };
 
+  useEffect(() => {
     fetchPortfolio();
   }, []);
+
+  const handleExercise = async (id) => {
+      setExercisingId(id);
+      triggerHaptic('notification');
+      try {
+          const res = await fetch(`/api/options/exercise/${id}`, { method: 'POST' });
+          const json = await res.json();
+          if (res.ok) {
+              // Add net payout to cash balance
+              const currentCash = parseFloat(localStorage.getItem('cash_balance') || '0');
+              const newCash = currentCash + json.net_payout;
+              localStorage.setItem('cash_balance', newCash.toString());
+
+              setStats(prev => ({ ...prev, cashBalance: newCash }));
+
+              triggerHaptic('success');
+              confetti({
+                  particleCount: 150,
+                  spread: 80,
+                  origin: { y: 0.6 },
+                  colors: ['#10B981', '#34D399', '#FFD700']
+              });
+              alert(`Exercised! Gross: $${json.gross_payout}, Fee: $${json.fee}, Net: $${json.net_payout}`);
+              fetchPortfolio(); // Refresh
+          } else {
+              alert(`Error: ${json.error}`);
+          }
+      } catch (err) {
+          console.error(err);
+          alert("Failed to exercise");
+      } finally {
+          setExercisingId(null);
+      }
+  };
 
   const handleClaimDividend = () => {
       const now = Date.now();
@@ -271,8 +312,96 @@ const Portfolio = () => {
           )}
       </div>
 
+      {/* Options Portfolio List */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-8">
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-emerald-600" />
+                  Active Options Contracts
+              </h3>
+          </div>
+
+          {optionsPortfolio.length === 0 ? (
+              <div className="p-12 text-center">
+                  <p className="text-gray-500 max-w-sm mx-auto">No active options contracts. Visit a feature page to trade options.</p>
+              </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                      <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Feature</th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                          <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Strike Price</th>
+                          <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Current Price</th>
+                          <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Premium Paid</th>
+                          <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                          <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                      </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                      {optionsPortfolio.map((contract) => {
+                          const isCallInMoney = contract.type === 'call' && contract.current_price > contract.strike_price;
+                          const isPutInMoney = contract.type === 'put' && contract.current_price < contract.strike_price;
+                          const isInMoney = isCallInMoney || isPutInMoney;
+
+                          return (
+                          <tr key={contract.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                  <Link to={`/feature/${contract.feature_id}`} className="text-sm font-bold text-emerald-600 hover:text-emerald-900">
+                                      {contract.feature_title}
+                                  </Link>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                      contract.type === 'call' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                  }`}>
+                                      {contract.type.toUpperCase()}
+                                  </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right font-mono font-bold text-gray-900">
+                                  ${contract.strike_price.toFixed(2)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right font-mono text-gray-500">
+                                  ${contract.current_price.toFixed(2)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right font-mono text-gray-500">
+                                  ${contract.premium_paid.toFixed(2)}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      contract.status === 'exercised' ? 'bg-gray-100 text-gray-800' :
+                                      isInMoney ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                  }`}>
+                                      {contract.status === 'exercised' ? 'EXERCISED' : isInMoney ? 'ITM' : 'OTM'}
+                                  </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right">
+                                  {contract.status === 'active' && (
+                                      <button
+                                          onClick={() => handleExercise(contract.id)}
+                                          disabled={exercisingId === contract.id || !isInMoney}
+                                          className={`px-3 py-1 rounded text-xs font-bold shadow-sm transition-colors ${
+                                              isInMoney
+                                                  ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                                                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                          }`}
+                                          title={isInMoney ? "Exercise Contract" : "Out of the Money"}
+                                      >
+                                          {exercisingId === contract.id ? 'Processing...' : 'Exercise'}
+                                      </button>
+                                  )}
+                              </td>
+                          </tr>
+                      )})}
+                  </tbody>
+              </table>
+            </div>
+          )}
+      </div>
+
       {/* Risk Disclosure */}
-      <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4 flex items-start gap-3">
+      <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4 flex items-start gap-3 mt-8">
           <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
           <div>
               <h4 className="text-sm font-bold text-yellow-800">CodeStreet Ventures Risk Disclosure</h4>

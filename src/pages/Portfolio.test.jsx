@@ -37,6 +37,11 @@ describe('Portfolio Component', () => {
             json: async () => ({ data: mockFeatures })
         });
 
+        // Mock the options fetch call
+        fetch.mockResolvedValueOnce({
+            json: async () => ({ data: [] })
+        });
+
         render(
             <MemoryRouter>
                 <Portfolio />

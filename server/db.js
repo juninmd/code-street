@@ -144,6 +144,25 @@ db.serialize(() => {
         }
     });
 
+    // Options Contracts Table
+    db.run(`CREATE TABLE IF NOT EXISTS options_contracts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        feature_id INTEGER NOT NULL,
+        type TEXT NOT NULL, -- 'call' or 'put'
+        strike_price REAL NOT NULL,
+        expiration_date DATETIME NOT NULL,
+        premium_paid REAL NOT NULL,
+        status TEXT DEFAULT 'active', -- 'active', 'exercised', 'expired'
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE CASCADE
+    )`, (err) => {
+        if (err) {
+            console.error('Error creating options_contracts table', err.message);
+        } else {
+            console.log('Options contracts table ready.');
+        }
+    });
+
     // Indexes for performance
     db.run('CREATE INDEX IF NOT EXISTS idx_features_status ON features(status)');
     db.run('CREATE INDEX IF NOT EXISTS idx_pledges_feature_id ON pledges(feature_id)');
