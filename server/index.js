@@ -168,8 +168,13 @@ app.get('/api/stats', async (req, res) => {
         // Pro Subscription Revenue
         stats.pro_revenue = proRevenueTotal;
 
-        // Total Revenue = Base (5%) + Dark Pool Extra (10%) + Burned amounts + Pro Subscriptions (100% of it)
-        stats.platform_revenue = baseRevenue + stats.dark_pool_fees + stats.burned_amount + stats.pro_revenue;
+        // Options Revenue
+        const optionsRevenueRow = await dbGet("SELECT SUM(premium_paid * 0.05) as options_fees FROM options_contracts");
+        const optionsFees = optionsRevenueRow && optionsRevenueRow.options_fees ? optionsRevenueRow.options_fees : 0;
+
+        // Total Revenue = Base (5%) + Dark Pool Extra (10%) + Burned amounts + Pro Subscriptions (100% of it) + Options Fees (5%)
+        stats.platform_revenue = baseRevenue + stats.dark_pool_fees + stats.burned_amount + stats.pro_revenue + optionsFees;
+        stats.options_fees = optionsFees;
 
         // Withdrawals
         const payoutSum = await dbGet('SELECT SUM(amount) as val FROM payouts');
@@ -399,6 +404,108 @@ app.patch('/api/features/:id/status', async (req, res) => {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+// --- Options API ---
+
+// Buy an Options Contract
+app.post('/api/options/buy', async (req, res) => {
+    const { feature_id, type, strike_price, expiration_date, premium_paid } = req.body;
+
+    if (!feature_id || !type || !strike_price || !expiration_date || !premium_paid) {
+        return res.status(400).json({ error: 'Missing required options parameters' });
+    }
+
+    const sql = `
+        INSERT INTO options_contracts (feature_id, type, strike_price, expiration_date, premium_paid, status)
+        VALUES (?, ?, ?, ?, ?, 'active')
+    `;
+
+    try {
+        const { lastID } = await dbRun(sql, [feature_id, type, strike_price, expiration_date, premium_paid]);
+        const contract = await dbGet('SELECT * FROM options_contracts WHERE id = ?', [lastID]);
+        res.json({ message: 'Options contract purchased', data: contract });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get User's Options Portfolio
+app.get('/api/options/portfolio', async (req, res) => {
+    try {
+        // We calculate current_price_simulation since it's not actually stored in the DB but derived
+        const rows = await dbAll(`
+            SELECT o.*, f.title as feature_title, f.votes, f.pledged_amount
+            FROM options_contracts o
+            JOIN features f ON o.feature_id = f.id
+            ORDER BY o.created_at DESC
+        `);
+
+        const data = rows.map(row => {
+            const current_price = 1.00 + (row.votes * 0.10) + ((row.pledged_amount || 0) * 0.001);
+            return {
+                ...row,
+                current_price: parseFloat(current_price.toFixed(2))
+            };
+        });
+
+        res.json({ data });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Exercise an Options Contract
+app.post('/api/options/exercise/:id', async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Ensure contract exists and is active
+        const contract = await dbGet('SELECT * FROM options_contracts WHERE id = ?', [id]);
+        if (!contract) return res.status(404).json({ error: 'Contract not found' });
+        if (contract.status !== 'active') return res.status(400).json({ error: 'Contract is not active' });
+
+        // Get current price
+        const featureRow = await dbGet('SELECT votes, pledged_amount FROM features WHERE id = ?', [contract.feature_id]);
+        if (!featureRow) return res.status(404).json({ error: 'Underlying asset not found' });
+
+        const current_price = 1.00 + (featureRow.votes * 0.10) + ((featureRow.pledged_amount || 0) * 0.001);
+
+        // Calculate payout
+        let payout = 0;
+        if (contract.type === 'call' && current_price > contract.strike_price) {
+            payout = (current_price - contract.strike_price) * 100; // Assuming 1 contract = 100 shares for fun math
+        } else if (contract.type === 'put' && current_price < contract.strike_price) {
+            payout = (contract.strike_price - current_price) * 100;
+        }
+
+        if (payout <= 0) {
+            return res.status(400).json({ error: 'Contract is out-of-the-money. Cannot exercise.' });
+        }
+
+        // 5% Exercise Fee
+        const exercise_fee = payout * 0.05;
+        const net_payout = payout - exercise_fee;
+
+        // Update contract status
+        const { changes } = await dbRun("UPDATE options_contracts SET status = 'exercised' WHERE id = ? AND status = 'active'", [id]);
+
+        if (changes === 0) {
+            return res.status(400).json({ error: 'Contract is not active or has already been exercised.' });
+        }
+
+        // Note: In a real app we'd add `net_payout` to the user's cash balance.
+        // For the simulation, we'll just return it.
+
+        res.json({
+            message: 'Contract exercised successfully',
+            gross_payout: parseFloat(payout.toFixed(2)),
+            fee: parseFloat(exercise_fee.toFixed(2)),
+            net_payout: parseFloat(net_payout.toFixed(2))
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // --- Comments API ---

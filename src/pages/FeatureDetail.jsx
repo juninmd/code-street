@@ -7,6 +7,7 @@ import ShareBountyModal from '../components/ShareBountyModal';
 import PriceChart from '../components/PriceChart';
 import AnalystRating from '../components/AnalystRating';
 import PaymentModal from '../components/PaymentModal';
+import OptionsChain from '../components/OptionsChain';
 import { addToPortfolio } from '../utils/portfolio';
 import { triggerHaptic } from '../utils/haptics';
 
@@ -227,6 +228,9 @@ const FeatureDetail = () => {
                       <div className="mt-6">
                         <PriceChart history={history} />
                       </div>
+
+                      {/* Options Chain */}
+                      <OptionsChain featureId={feature.id} currentPrice={feature.current_price} />
 
                       {/* Pledge/Buy Section */}
                       <div className="mt-6 p-5 bg-emerald-900 text-white border border-emerald-800 rounded-xl relative overflow-hidden">
