@@ -488,7 +488,11 @@ app.post('/api/options/exercise/:id', async (req, res) => {
         const net_payout = payout - exercise_fee;
 
         // Update contract status
-        await dbRun("UPDATE options_contracts SET status = 'exercised' WHERE id = ?", [id]);
+        const { changes } = await dbRun("UPDATE options_contracts SET status = 'exercised' WHERE id = ? AND status = 'active'", [id]);
+
+        if (changes === 0) {
+            return res.status(400).json({ error: 'Contract is not active or has already been exercised.' });
+        }
 
         // Note: In a real app we'd add `net_payout` to the user's cash balance.
         // For the simulation, we'll just return it.
