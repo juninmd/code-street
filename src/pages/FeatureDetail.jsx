@@ -17,6 +17,7 @@ const FeatureDetail = () => {
   const [feature, setFeature] = useState(null);
   const [comments, setComments] = useState([]);
   const [history, setHistory] = useState([]);
+  const [candlesticks, setCandlesticks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [pledgeAmount, setPledgeAmount] = useState('');
@@ -31,15 +32,17 @@ const FeatureDetail = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [featRes, commRes, histRes] = await Promise.all([
+        const [featRes, commRes, histRes, candleRes] = await Promise.all([
           fetch('/api/features'),
           fetch(`/api/features/${id}/comments`),
-          fetch(`/api/features/${id}/history`)
+          fetch(`/api/features/${id}/history`),
+          fetch(`/api/features/${id}/candlesticks?timeframe=minute`) // Use minute timeframe for high resolution testing
         ]);
 
         const featJson = await featRes.json();
         const commJson = await commRes.json();
         const histJson = await histRes.json();
+        const candleJson = await candleRes.json();
 
         const found = featJson.data.find(f => f.id === parseInt(id));
         if (found) {
@@ -49,6 +52,7 @@ const FeatureDetail = () => {
         }
         setComments(commJson.data);
         setHistory(histJson.data);
+        setCandlesticks(candleJson.data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -226,7 +230,7 @@ const FeatureDetail = () => {
 
                       {/* Price History Chart */}
                       <div className="mt-6">
-                        <PriceChart history={history} />
+                        <PriceChart history={history} candlesticks={candlesticks} />
                       </div>
 
                       {/* Options Chain */}

@@ -382,6 +382,64 @@ app.get('/api/features/:id/history', async (req, res) => {
     }
 });
 
+// Get candlestick history for a feature
+app.get('/api/features/:id/candlesticks', async (req, res) => {
+    const { id } = req.params;
+    const { timeframe } = req.query; // 'day' or 'hour' or 'minute'
+
+    // Use hourly by default for simulation
+    const timeFormat = timeframe === 'day' ? '%Y-%m-%d' :
+                       timeframe === 'minute' ? '%Y-%m-%d %H:%M' :
+                       '%Y-%m-%d %H:00';
+
+    try {
+        // We need an opening and closing price for real candlesticks
+        // Since pledges are additive, we calculate running total first
+
+        const allPledgesSql = 'SELECT amount, strftime(?, created_at) as time_bucket FROM pledges WHERE feature_id = ? ORDER BY created_at ASC';
+        const allPledges = await dbAll(allPledgesSql, [timeFormat, id]);
+
+        // Calculate cumulative totals per bucket
+        let runningTotal = 0;
+        let lastBucket = null;
+
+        const buckets = {};
+
+        allPledges.forEach(p => {
+            const bucket = p.time_bucket;
+            if (!buckets[bucket]) {
+                buckets[bucket] = {
+                    open: runningTotal, // The price at start of this bucket is the running total before any new pledges
+                    high: runningTotal,
+                    low: runningTotal,
+                    close: runningTotal,
+                    volume: 0,
+                    transactions: 0
+                };
+            }
+
+            // Add to running total
+            runningTotal += p.amount;
+            buckets[bucket].close = runningTotal;
+            buckets[bucket].volume += p.amount;
+            buckets[bucket].transactions += 1;
+
+            // If the running total goes higher than the max seen this bucket
+            if (runningTotal > buckets[bucket].high) buckets[bucket].high = runningTotal;
+            if (runningTotal < buckets[bucket].low) buckets[bucket].low = runningTotal;
+        });
+
+        const candlesticks = Object.keys(buckets).sort().map(bucket => ({
+            time: bucket,
+            ...buckets[bucket]
+        }));
+
+        res.json({ data: candlesticks });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Update status (Admin)
 app.patch('/api/features/:id/status', async (req, res) => {
   const { id } = req.params;
