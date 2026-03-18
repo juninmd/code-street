@@ -29,12 +29,21 @@ db.serialize(() => {
         is_boosted INTEGER DEFAULT 0,
         deadline DATETIME,
         is_burned INTEGER DEFAULT 0,
+        short_amount REAL DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`, (err) => {
         if (err) {
             console.error('Error creating features table', err.message);
         } else {
             console.log('Features table ready.');
+            // Add short_amount column if it doesn't exist
+            db.run('ALTER TABLE features ADD COLUMN short_amount REAL DEFAULT 0', (err) => {
+                if (err && !err.message.includes('duplicate column')) {
+                    console.error('Error adding short_amount column', err.message);
+                } else {
+                    console.log('short_amount column ready.');
+                }
+            });
             // Add pledged_amount column if it doesn't exist
             db.run('ALTER TABLE features ADD COLUMN pledged_amount REAL DEFAULT 0', (err) => {
                 if (err && !err.message.includes('duplicate column')) {
@@ -99,6 +108,7 @@ db.serialize(() => {
         feature_id INTEGER NOT NULL,
         amount REAL NOT NULL,
         is_dark_pool INTEGER DEFAULT 0,
+        is_short INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (feature_id) REFERENCES features(id) ON DELETE CASCADE
     )`, (err) => {
@@ -112,6 +122,14 @@ db.serialize(() => {
                     // console.error('Error adding is_dark_pool column', err.message);
                 } else {
                     console.log('is_dark_pool column ready.');
+                }
+            });
+            // Add is_short column to pledges if it doesn't exist
+            db.run('ALTER TABLE pledges ADD COLUMN is_short INTEGER DEFAULT 0', (err) => {
+                if (err && !err.message.includes('duplicate column')) {
+                    console.error('Error adding is_short column', err.message);
+                } else {
+                    console.log('is_short column ready.');
                 }
             });
         }

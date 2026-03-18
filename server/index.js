@@ -73,7 +73,8 @@ app.get('/api/features', async (req, res) => {
         history = history.slice(-20);
 
         const pledge = row.pledged_amount || 0;
-        const current_price = 1.00 + (row.votes * 0.10) + (pledge * 0.001);
+        const short_amount = row.short_amount || 0;
+        const current_price = Math.max(0.01, 1.00 + (row.votes * 0.10) + (pledge * 0.001) - (short_amount * 0.001));
         // Deterministic 24h change based on ID
         const day_change = ((row.id * 13.5) % 10) - 5;
 
@@ -82,6 +83,7 @@ app.get('/api/features', async (req, res) => {
             current_price: parseFloat(current_price.toFixed(2)),
             day_change: parseFloat(day_change.toFixed(2)),
             hype_score: (row.votes * 10) + (pledge * 0.1),
+            short_amount: short_amount,
             sparkline_data: history
         };
     });
@@ -126,6 +128,37 @@ app.post('/api/features', async (req, res) => {
 
     const row = await dbGet('SELECT * FROM features WHERE id = ?', [lastID]);
     res.json({ message: 'Feature created', data: row });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Short a feature
+app.post('/api/features/:id/short', async (req, res) => {
+  const { id } = req.params;
+  const { amount, is_dark_pool = false } = req.body;
+
+  if (!amount || isNaN(amount) || amount <= 0) {
+      res.status(400).json({ error: 'Valid amount is required' });
+      return;
+  }
+
+  const sqlFeature = 'UPDATE features SET short_amount = COALESCE(short_amount, 0) + ? WHERE id = ?';
+  const sqlPledge = 'INSERT INTO pledges (feature_id, amount, is_short, is_dark_pool) VALUES (?, ?, 1, ?)';
+
+  try {
+    // 1. Update the short amount
+    const { changes } = await dbRun(sqlFeature, [amount, id]);
+
+    if (changes === 0) {
+        res.status(404).json({ error: 'Feature not found' });
+        return;
+    }
+
+    // 2. Record the short transaction
+    await dbRun(sqlPledge, [id, amount, is_dark_pool ? 1 : 0]);
+
+    res.json({ message: 'Shorted', changes });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

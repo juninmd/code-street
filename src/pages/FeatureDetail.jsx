@@ -26,6 +26,7 @@ const FeatureDetail = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showBusinessPlan, setShowBusinessPlan] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentType, setPaymentType] = useState('long');
 
   useEffect(() => {
     // Parallel fetch feature and comments
@@ -130,6 +131,34 @@ const FeatureDetail = () => {
       }
   }
 
+    const handleShort = async (isDarkPool = false) => {
+      if (!pledgeAmount || isNaN(pledgeAmount) || pledgeAmount <= 0) return;
+
+      setIsPledging(true);
+      try {
+          const res = await fetch(`/api/features/${id}/short`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: parseFloat(pledgeAmount), is_dark_pool: isDarkPool })
+          });
+          if (res.ok) {
+              const shares = parseFloat(pledgeAmount) / (feature.current_price || 1);
+              addToPortfolio(id, shares, feature.current_price || 1, 'short');
+              showToast(`📉 Shorted ${shares.toFixed(2)} Shares!`);
+              triggerHaptic('success');
+
+              setFeature(prev => ({ ...prev, short_amount: (prev.short_amount || 0) + parseFloat(pledgeAmount) }));
+
+              setPledgeAmount('');
+              setShowPaymentModal(false);
+          }
+      } catch (err) {
+          console.error(err);
+      } finally {
+          setIsPledging(false);
+      }
+  };
+
   const handlePledge = async (isDarkPool = false) => {
       if (!pledgeAmount || isNaN(pledgeAmount) || pledgeAmount <= 0) return;
 
@@ -142,7 +171,7 @@ const FeatureDetail = () => {
           });
           if (res.ok) {
               const shares = parseFloat(pledgeAmount) / (feature.current_price || 1);
-              addToPortfolio(id, shares, feature.current_price || 1);
+              addToPortfolio(id, shares, feature.current_price || 1, 'long');
               showToast(`🚀 Bought ${shares.toFixed(2)} Shares!`);
               triggerHaptic('success');
 
@@ -250,20 +279,21 @@ const FeatureDetail = () => {
                                       </span>
                                   </h3>
                               </div>
-                              <div className="text-right">
-                                  <p className="text-emerald-200 text-xs font-bold uppercase tracking-wider mb-1">Market Cap</p>
-                                  <p className="text-xl font-bold font-mono">${(feature.pledged_amount || 0).toLocaleString()}</p>
+                              <div className="text-right flex flex-col items-end gap-2">
+                                  <div>
+                                      <p className="text-emerald-200 text-xs font-bold uppercase tracking-wider mb-1">Market Cap</p>
+                                      <p className="text-xl font-bold font-mono">${(feature.pledged_amount || 0).toLocaleString()}</p>
+                                  </div>
+                                  <div>
+                                      <p className="text-red-300 text-xs font-bold uppercase tracking-wider mb-1">Short Interest</p>
+                                      <p className="text-md font-bold font-mono text-red-400">${(feature.short_amount || 0).toLocaleString()}</p>
+                                  </div>
                               </div>
                           </div>
 
-                          <form onSubmit={(e) => {
-                              e.preventDefault();
-                              if(pledgeAmount && !isNaN(pledgeAmount) && parseFloat(pledgeAmount) > 0) {
-                                setShowPaymentModal(true);
-                              }
-                          }} className="flex gap-3 items-end">
-                              <div className="relative flex-1">
-                                  <label className="block text-xs font-bold text-emerald-300 uppercase mb-1">Investment Amount</label>
+                          <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-3">
+                              <div className="relative w-full">
+                                  <label className="block text-xs font-bold text-emerald-300 uppercase mb-1">Investment Amount / Short Size</label>
                                   <div className="relative">
                                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                                     <input
@@ -277,13 +307,34 @@ const FeatureDetail = () => {
                                     />
                                   </div>
                               </div>
-                              <button
-                                  type="submit"
-                                  disabled={isPledging || !pledgeAmount}
-                                  className="px-6 py-3 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-400 disabled:opacity-50 transition-colors shadow-lg shadow-emerald-900/50 flex-shrink-0"
-                              >
-                                  {isPledging ? 'Buying...' : 'Buy Shares'}
-                              </button>
+                              <div className="flex gap-3 mt-2">
+                                  <button
+                                      type="button"
+                                      disabled={isPledging || !pledgeAmount}
+                                      onClick={() => {
+                                          if(pledgeAmount && !isNaN(pledgeAmount) && parseFloat(pledgeAmount) > 0) {
+                                              setPaymentType('long');
+                                              setShowPaymentModal(true);
+                                          }
+                                      }}
+                                      className="flex-1 px-6 py-3 bg-emerald-500 text-white font-bold rounded-lg hover:bg-emerald-400 disabled:opacity-50 transition-colors shadow-lg shadow-emerald-900/50"
+                                  >
+                                      {isPledging && paymentType === 'long' ? 'Buying...' : 'Buy Shares'}
+                                  </button>
+                                  <button
+                                      type="button"
+                                      disabled={isPledging || !pledgeAmount}
+                                      onClick={() => {
+                                          if(pledgeAmount && !isNaN(pledgeAmount) && parseFloat(pledgeAmount) > 0) {
+                                              setPaymentType('short');
+                                              setShowPaymentModal(true);
+                                          }
+                                      }}
+                                      className="flex-1 px-6 py-3 bg-red-500 text-white font-bold rounded-lg hover:bg-red-400 disabled:opacity-50 transition-colors shadow-lg shadow-red-900/50"
+                                  >
+                                      {isPledging && paymentType === 'short' ? 'Shorting...' : 'Short Sell'}
+                                  </button>
+                              </div>
                           </form>
                           {pledgeAmount && !isNaN(parseFloat(pledgeAmount)) && (
                               <p className="text-xs text-emerald-400 mt-2 text-right">
@@ -348,7 +399,8 @@ const FeatureDetail = () => {
       {showPaymentModal && (
           <PaymentModal
             amount={parseFloat(pledgeAmount)}
-            onConfirm={handlePledge}
+            transactionType={paymentType}
+            onConfirm={(isDarkPool) => paymentType === 'short' ? handleShort(isDarkPool) : handlePledge(isDarkPool)}
             onClose={() => setShowPaymentModal(false)}
           />
       )}

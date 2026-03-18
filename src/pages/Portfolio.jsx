@@ -41,13 +41,28 @@ const Portfolio = () => {
         const enriched = holdings.map(h => {
             const marketData = json.data.find(f => f.id === h.id);
             if (!marketData) return null;
+
+            const positionType = h.type || 'long';
+            const costBasis = h.shares * h.avgPrice;
+            let currentValue = 0;
+            let unrealizedGain = 0;
+
+            if (positionType === 'short') {
+                currentValue = (2 * h.avgPrice - (marketData.current_price || 0)) * h.shares;
+                unrealizedGain = (h.avgPrice - (marketData.current_price || 0)) * h.shares;
+            } else {
+                currentValue = h.shares * (marketData.current_price || 0);
+                unrealizedGain = currentValue - costBasis;
+            }
+
             return {
                 ...marketData,
                 sharesOwned: h.shares,
                 avgCost: h.avgPrice,
-                currentValue: h.shares * (marketData.current_price || 0),
-                costBasis: h.shares * h.avgPrice,
-                unrealizedGain: (h.shares * (marketData.current_price || 0)) - (h.shares * h.avgPrice)
+                currentValue,
+                costBasis,
+                unrealizedGain,
+                positionType
             };
         }).filter(Boolean);
 
@@ -274,14 +289,17 @@ const Portfolio = () => {
                       </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                      {portfolioData.map((feature) => (
-                          <tr key={feature.id} className="hover:bg-gray-50 transition-colors">
+                      {portfolioData.map((feature, idx) => (
+                          <tr key={`${feature.id}-${feature.positionType}-${idx}`} className="hover:bg-gray-50 transition-colors">
                               <td className="px-6 py-4 whitespace-nowrap">
-                                  <div className="flex items-center">
+                                  <div className="flex items-center gap-2">
                                       <div>
                                           <div className="text-sm font-bold text-gray-900">{feature.title}</div>
                                           <div className="text-xs text-gray-500">{feature.ticker || '---'}</div>
                                       </div>
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase ${feature.positionType === 'short' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                                          {feature.positionType}
+                                      </span>
                                   </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 font-mono">

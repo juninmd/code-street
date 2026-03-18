@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { CreditCard, Lock, CheckCircle, X } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics';
 
-const PaymentModal = ({ amount, onConfirm, onClose }) => {
+const PaymentModal = ({ amount, onConfirm, onClose, transactionType = 'long' }) => {
   const [processing, setProcessing] = useState(false);
   const [step, setStep] = useState(1); // 1: Input, 2: Success
   const [isDarkPool, setIsDarkPool] = useState(false);
@@ -126,9 +126,9 @@ const PaymentModal = ({ amount, onConfirm, onClose }) => {
             <button
                 type="submit"
                 disabled={processing}
-                className="w-full mt-4 bg-gray-900 text-white font-bold py-3 rounded-lg hover:bg-black transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className={`w-full mt-4 text-white font-bold py-3 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${transactionType === 'short' ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-900 hover:bg-black'}`}
             >
-                {processing ? 'Processing Transaction...' : `Pay $${total.toFixed(2)}`}
+                {processing ? 'Processing Transaction...' : (transactionType === 'short' ? `Short Sell $${total.toFixed(2)}` : `Pay $${total.toFixed(2)}`)}
             </button>
 
             <p className="text-xs text-center text-gray-400 mt-2">

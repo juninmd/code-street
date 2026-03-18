@@ -6,20 +6,20 @@ export const getPortfolio = () => {
     const parsed = JSON.parse(stored);
     // Migration: If array of numbers (legacy format), convert to objects
     if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0] === 'number') {
-       const migrated = parsed.map(id => ({ id, shares: 1, avgPrice: 0 }));
+       const migrated = parsed.map(id => ({ id, shares: 1, avgPrice: 0, type: 'long' }));
        localStorage.setItem('my_portfolio', JSON.stringify(migrated));
        return migrated;
     }
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map(p => ({ ...p, type: p.type || 'long' })) : [];
   } catch (e) {
     console.error("Portfolio parse error", e);
     return [];
   }
 };
 
-export const addToPortfolio = (id, shares, price) => {
+export const addToPortfolio = (id, shares, price, type = 'long') => {
     const portfolio = getPortfolio();
-    const index = portfolio.findIndex(p => p.id === parseInt(id));
+    const index = portfolio.findIndex(p => p.id === parseInt(id) && (p.type || 'long') === type);
 
     const s = parseFloat(shares);
     const p = parseFloat(price);
@@ -41,7 +41,8 @@ export const addToPortfolio = (id, shares, price) => {
         portfolio.push({
             id: parseInt(id),
             shares: s,
-            avgPrice: p
+            avgPrice: p,
+            type: type
         });
     }
 
