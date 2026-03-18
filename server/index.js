@@ -147,10 +147,12 @@ app.post('/api/features/:id/short', async (req, res) => {
   const sqlPledge = 'INSERT INTO pledges (feature_id, amount, is_short, is_dark_pool) VALUES (?, ?, 1, ?)';
 
   try {
+    await dbRun('BEGIN TRANSACTION');
     // 1. Update the short amount
     const { changes } = await dbRun(sqlFeature, [amount, id]);
 
     if (changes === 0) {
+        await dbRun('ROLLBACK');
         res.status(404).json({ error: 'Feature not found' });
         return;
     }
@@ -158,8 +160,10 @@ app.post('/api/features/:id/short', async (req, res) => {
     // 2. Record the short transaction
     await dbRun(sqlPledge, [id, amount, is_dark_pool ? 1 : 0]);
 
+    await dbRun('COMMIT');
     res.json({ message: 'Shorted', changes });
   } catch (err) {
+    await dbRun('ROLLBACK');
     res.status(400).json({ error: err.message });
   }
 });
