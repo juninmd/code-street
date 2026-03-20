@@ -44,7 +44,9 @@ A evolução do CodeStreet é dividida em quatro fases principais, focadas em es
     *   [ ] Algoritmo de sentimento baseado no histórico de commits e feedbacks.
 *   **Engine de Dados (Jules):**
     *   [x] Refinamento dos cálculos de dividendos projetados.
-    *   [ ] Histórico de preços em gráficos de velas (Candlestick charts) para cada feature.
+    *   [x] Histórico de preços em gráficos de velas (Candlestick charts) para cada feature.
+    *   [x] Dark Pools e Short Selling mechanics.
+    *   [x] Opções de Compra e Venda (Calls/Puts) para especulação.
     *   [ ] API de exportação de dados em CSV/JSON para análise externa.
 *   **Qualidade Sentinel (Sentinel):**
     *   [ ] Testes de carga para simular 10.000 trades simultâneos.
@@ -58,8 +60,11 @@ A evolução do CodeStreet é dividida em quatro fases principais, focadas em es
 *   **SaaS Infrastructure (Jules):**
     *   [ ] Implementação de autenticação JWT segura com roles de usuário (Investor, Manager, Admin).
     *   [ ] Suporte a múltiplos workspaces (Times/Empresas diferentes no mesmo DB).
+    *   [ ] Assinatura SaaS Multi-tenant (Cobrança por workspace ativo e features listadas).
     *   [ ] Integração de Webhooks para notificações externas (Discord/Slack).
 *   **UX Pro (Spark):**
+    *   [x] Melhorias PWA: Manifesto standalone com cores temáticas instalável em Android/iOS.
+    *   [x] Gamificação e Engajamento: Mystery Crates, Daily Dividends e Mining.
     *   [ ] Suporte nativo a Temas Customizados (Dark, Light, High Contrast).
     *   [ ] App nativo (React Native/Expo) para maior presença em app stores.
     *   [ ] Sistema de notificações Push reais via Firebase Cloud Messaging.
