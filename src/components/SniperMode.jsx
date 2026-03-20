@@ -35,7 +35,7 @@ const SniperMode = ({ features, onClose }) => {
         setTarget(best);
         setScanning(false);
     }, 2000); // Dramatic pause
-  }, [features]);
+  }, [features, isPro]);
 
   const handleBuyPro = async () => {
     setBuyingPro(true);
