@@ -7,7 +7,7 @@ const PaymentModal = ({ amount, onConfirm, onClose }) => {
   const [step, setStep] = useState(1); // 1: Input, 2: Success
   const [isDarkPool, setIsDarkPool] = useState(false);
 
-  const fee = amount * (isDarkPool ? 0.15 : 0.05);
+  const fee = amount * (isDarkPool ? 0.15 : 0.05); // TODO: Replace with constants
   const total = amount + fee;
 
   const handleSubmit = (e) => {
@@ -68,7 +68,7 @@ const PaymentModal = ({ amount, onConfirm, onClose }) => {
                 </div>
             </div>
 
-            <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded border border-gray-200 cursor-pointer" onClick={() => setIsDarkPool(!isDarkPool)}>
+            <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded border border-gray-200 cursor-pointer">
                 <input
                     type="checkbox"
                     id="darkPoolCheck"
