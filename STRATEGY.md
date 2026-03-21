@@ -22,3 +22,15 @@ To make software development exciting and profitable.
 - **PWA Core:** The app is built as a Progressive Web App (PWA) to be installable on Android.
 - **Offline First:** Service Workers cache the Board and Portfolio for offline viewing.
 - **Notifications:** "Market Moving" events trigger local notifications.
+
+## Validation Strategy
+To refine the business model and ensure the gamified stock market loop works before a full public launch, we use built-in simulation tools to test market dynamics and user behavior internally.
+
+1. **Market Simulation Testing:**
+   - **`POST /api/market/simulate`:** Generates organic-looking "pledges" (buy orders) and "votes" across random features. This tests the 5% standard Vig and 15% Dark Pool fee collection, ensuring the Admin Wealth Dashboard accurately tracks projected ARR.
+   - **`POST /api/market/crash`:** Triggers a 20% drop in active feature market caps. This tests the Short Selling mechanics and ensures the platform correctly calculates negative price pressure, validating the risk/reward loop for "investors".
+
+2. **Gamification Loops Validation:**
+   - Test the "Daily Dividend" (1% equity claim) and "Mining" mechanics. These features create daily active user (DAU) retention loops.
+   - Use the `UserProfile` component's "Mystery Crate" (Lootbox) mechanic to ensure users are incentivized to spend their virtual cash to win random feature shares, keeping the economy active.
+   - Verify the `SniperMode` feature provides enough deterministic "Wall St." style analytics to justify the $99/mo CodeStreet PRO subscription.
