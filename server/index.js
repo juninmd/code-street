@@ -666,6 +666,89 @@ app.post('/api/features/:id/panic', async (req, res) => {
     }
 });
 
+// Quantum Trade Simulation
+app.post('/api/market/quantum-trade', async (req, res) => {
+    const { investment } = req.body;
+
+    if (!investment || isNaN(investment) || investment <= 0) {
+        res.status(400).json({ error: 'Valid investment amount is required' });
+        return;
+    }
+
+    try {
+        const features = await dbAll('SELECT id, title, pledged_amount, votes FROM features');
+        if (features.length === 0) {
+            res.status(404).json({ error: 'No features available for Quantum Trading' });
+            return;
+        }
+
+        // 5% Quantum Computation Fee
+        const computationFee = investment * 0.05;
+        const activeInvestment = investment - computationFee;
+
+        // Record the fee as a generic platform revenue (we'll just use a phantom feature or burned amount for simplicity,
+        // but here we can just create a special pledge to a "pro_subscription" category or just insert into pledges)
+        // Let's create a special system record or just add it to a burned feature if we had one.
+        // For simplicity, we'll insert a dummy pledge with feature_id=0 (if allowed, or just skip it and let it be an abstract fee).
+        // To be safe with foreign keys, we'll just acknowledge the fee in the response and let the frontend handle the cash deduction.
+
+        // Simulate 3 to 5 micro-trades
+        const numTrades = Math.floor(Math.random() * 3) + 3;
+        let totalReturn = 0;
+        const trades = [];
+
+        await dbRun('BEGIN TRANSACTION');
+
+        for (let i = 0; i < numTrades; i++) {
+            const feature = features[Math.floor(Math.random() * features.length)];
+            const tradeType = Math.random() > 0.5 ? 'long' : 'short';
+            const tradeAmount = activeInvestment / numTrades;
+
+            // Artificial "Quantum AI" success probability (e.g., 60% chance to win on each micro-trade)
+            const isWin = Math.random() > 0.4;
+            const multiplier = isWin ? (1.1 + Math.random() * 0.4) : (0.5 + Math.random() * 0.4); // Win 10-50%, Lose 10-50%
+            const tradeResult = tradeAmount * multiplier;
+
+            totalReturn += tradeResult;
+
+            trades.push({
+                feature_title: feature.title,
+                type: tradeType,
+                invested: parseFloat(tradeAmount.toFixed(2)),
+                result: parseFloat(tradeResult.toFixed(2)),
+                profit: parseFloat((tradeResult - tradeAmount).toFixed(2))
+            });
+
+            // Impact the market slightly
+            const marketImpact = tradeAmount * 0.1; // 10% of trade hits the actual market
+            if (tradeType === 'long') {
+                await dbRun('UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?', [marketImpact, feature.id]);
+                await dbRun('INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)', [feature.id, marketImpact, 1]);
+            } else {
+                await dbRun('UPDATE features SET short_amount = COALESCE(short_amount, 0) + ? WHERE id = ?', [marketImpact, feature.id]);
+                await dbRun('INSERT INTO pledges (feature_id, amount, is_short, is_dark_pool) VALUES (?, ?, ?, ?)', [feature.id, marketImpact, 1, 1]);
+            }
+        }
+
+        await dbRun('COMMIT');
+
+        const netProfit = totalReturn - investment; // Net profit compared to original investment
+
+        res.json({
+            message: 'Quantum Execution Complete',
+            investment: parseFloat(investment.toFixed(2)),
+            fee: parseFloat(computationFee.toFixed(2)),
+            total_return: parseFloat(totalReturn.toFixed(2)),
+            net_profit: parseFloat(netProfit.toFixed(2)),
+            trades: trades
+        });
+
+    } catch (err) {
+        await dbRun('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Market Maker Simulation (Inject Liquidity)
 app.post('/api/market/simulate', async (req, res) => {
     try {

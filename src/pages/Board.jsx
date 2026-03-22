@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap, Share2, BarChart2, Clock, AlertTriangle, Crosshair, Building, TrendingUp } from 'lucide-react';
+import { ChevronUp, MessageSquare, Plus, DollarSign, Sparkles, Zap, Share2, BarChart2, Clock, AlertTriangle, Crosshair, Building, TrendingUp, Cpu } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import MarketInsider from '../components/MarketInsider';
 import ShareBountyModal from '../components/ShareBountyModal';
 import MarketHeatmap from '../components/MarketHeatmap';
 import SniperMode from '../components/SniperMode';
+import QuantumTradeModal from '../components/QuantumTradeModal';
 import Sparkline from '../components/Sparkline';
 import IPOLaunch from '../components/IPOLaunch';
 import { addToPortfolio } from '../utils/portfolio';
@@ -17,6 +18,7 @@ const Board = () => {
   const navigate = useNavigate();
   const [showInsider, setShowInsider] = useState(false);
   const [isSniperMode, setIsSniperMode] = useState(false);
+  const [isQuantumMode, setIsQuantumMode] = useState(false);
   const [shareModalFeature, setShareModalFeature] = useState(null);
   const [features, setFeatures] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -299,6 +301,13 @@ const Board = () => {
             Sniper Mode
             </button>
             <button
+            onClick={() => setIsQuantumMode(true)}
+            className="inline-flex items-center px-4 py-2 border border-indigo-500/30 shadow-sm text-sm font-bold rounded-md text-indigo-400 bg-gray-900 hover:bg-gray-800 focus:outline-none animate-pulse"
+            >
+            <Cpu className="w-4 h-4 mr-2 text-indigo-500" />
+            Quantum Algo
+            </button>
+            <button
             onClick={handleMysteryBounty}
             className="inline-flex items-center px-4 py-2 border border-emerald-200 shadow-sm text-sm font-bold rounded-md text-emerald-700 bg-emerald-50 hover:bg-emerald-100 focus:outline-none animate-pulse-gold"
             >
@@ -349,6 +358,7 @@ const Board = () => {
 
       {showInsider && <MarketInsider features={features} onClose={() => setShowInsider(false)} />}
       {isSniperMode && <SniperMode features={features} onClose={() => setIsSniperMode(false)} />}
+      {isQuantumMode && <QuantumTradeModal onClose={() => { setIsQuantumMode(false); fetchFeatures(); fetchStats(); }} />}
       {shareModalFeature && <ShareBountyModal feature={shareModalFeature} onClose={() => setShareModalFeature(null)} />}
       {launchedFeature && <IPOLaunch feature={launchedFeature} onClose={() => setLaunchedFeature(null)} />}
 

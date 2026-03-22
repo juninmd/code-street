@@ -53,3 +53,17 @@ export const addToPortfolio = (id, shares, price, type = 'long') => {
 export const formatCurrency = (val) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 };
+
+export const getCashBalance = () => {
+    const stored = localStorage.getItem('cash_balance');
+    return stored ? parseFloat(stored) : 5000.00; // Starting with $5000 for simulation
+};
+
+export const updateCashBalance = (amount) => {
+    const current = getCashBalance();
+    const updated = current + parseFloat(amount);
+    localStorage.setItem('cash_balance', updated.toFixed(2));
+    // Dispatch custom event to update UI across tabs/components
+    window.dispatchEvent(new Event('cash_balance_updated'));
+    return updated;
+};
