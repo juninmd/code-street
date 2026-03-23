@@ -13,11 +13,11 @@ const QuantumTradeModal = ({ onClose }) => {
     const cash = getCashBalance();
 
     const handleExecute = async () => {
-        if (investment > cash) {
+        if (parseFloat(investment) > cash) {
             setError('Insufficient liquidity. Deposit more cash.');
             return;
         }
-        if (investment < 10) {
+        if (parseFloat(investment) < 10) {
             setError('Minimum investment is $10.');
             return;
         }
@@ -36,7 +36,16 @@ const QuantumTradeModal = ({ onClose }) => {
                 });
 
                 if (!res.ok) {
-                    throw new Error('Quantum Engine Overload');
+                    let errorMessage = 'Quantum Engine Overload';
+                    try {
+                        const errorData = await res.json();
+                        if (errorData && errorData.error) {
+                            errorMessage = errorData.error;
+                        }
+                    } catch (e) {
+                        // Ignore if response is not JSON
+                    }
+                    throw new Error(errorMessage);
                 }
 
                 const data = await res.json();
