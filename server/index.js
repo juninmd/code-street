@@ -707,16 +707,16 @@ app.post('/api/market/quantum-trade', async (req, res) => {
             // Artificial "Quantum AI" success probability (e.g., 60% chance to win on each micro-trade)
             const isWin = Math.random() > 0.4;
             const multiplier = isWin ? (1.1 + Math.random() * 0.4) : (0.5 + Math.random() * 0.4); // Win 10-50%, Lose 10-50%
-            const tradeResult = tradeAmount * multiplier;
+            const tradeResult = Math.round((tradeAmount * multiplier) * 100) / 100;
 
             totalReturn += tradeResult;
 
             trades.push({
                 feature_title: feature.title,
                 type: tradeType,
-                invested: parseFloat(tradeAmount.toFixed(2)),
-                result: parseFloat(tradeResult.toFixed(2)),
-                profit: parseFloat((tradeResult - tradeAmount).toFixed(2))
+                invested: Math.round(tradeAmount * 100) / 100,
+                result: tradeResult,
+                profit: Math.round((tradeResult - tradeAmount) * 100) / 100
             });
 
             // Impact the market slightly
