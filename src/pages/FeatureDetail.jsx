@@ -8,6 +8,8 @@ import PriceChart from '../components/PriceChart';
 import AnalystRating from '../components/AnalystRating';
 import PaymentModal from '../components/PaymentModal';
 import OptionsChain from '../components/OptionsChain';
+import HackerLeakModal from '../components/HackerLeakModal';
+import { Terminal } from 'lucide-react';
 import { addToPortfolio } from '../utils/portfolio';
 import { triggerHaptic } from '../utils/haptics';
 
@@ -26,6 +28,7 @@ const FeatureDetail = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showBusinessPlan, setShowBusinessPlan] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showHackerLeakModal, setShowHackerLeakModal] = useState(false);
   const [paymentType, setPaymentType] = useState('long');
 
   useEffect(() => {
@@ -244,13 +247,20 @@ const FeatureDetail = () => {
                       <p className="text-gray-600 text-lg leading-relaxed">{feature.description}</p>
 
                       {/* Wealth Tools */}
-                      <div className="flex gap-2 mt-4">
+                      <div className="flex gap-2 mt-4 flex-wrap">
                         <button
                             onClick={() => setShowBusinessPlan(true)}
                             className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                         >
                             <FileText className="w-4 h-4 mr-2 text-emerald-600" />
                             Generate Business Plan
+                        </button>
+                        <button
+                            onClick={() => setShowHackerLeakModal(true)}
+                            className="inline-flex items-center px-4 py-2 border border-green-900/50 shadow-sm text-sm font-bold rounded-md text-green-400 bg-black hover:bg-green-950 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                        >
+                            <Terminal className="w-4 h-4 mr-2 text-green-500" />
+                            Buy Insider Intel
                         </button>
                       </div>
 
@@ -402,6 +412,13 @@ const FeatureDetail = () => {
             transactionType={paymentType}
             onConfirm={(isDarkPool) => paymentType === 'short' ? handleShort(isDarkPool) : handlePledge(isDarkPool)}
             onClose={() => setShowPaymentModal(false)}
+          />
+      )}
+
+      {showHackerLeakModal && (
+          <HackerLeakModal
+              feature={feature}
+              onClose={() => setShowHackerLeakModal(false)}
           />
       )}
 
