@@ -14,19 +14,34 @@ const HackerLeakModal = ({ feature, onClose }) => {
     setCashBalance(balance);
   }, []);
 
-  const generateIntel = () => {
+  const generateIntel = async () => {
+    try {
+      const response = await fetch('/api/market/hacker-leak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: feature.title,
+          ticker: feature.ticker
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        return data.intel;
+      }
+    } catch (e) {
+      console.error('Failed to fetch intel:', e);
+    }
+
+    // Fallback if network fails
     const hints = [
       `[DECRYPTED_COMMS]: Whale wallets accumulating $${feature.ticker || 'ASSET'} in dark pools. Upward volatility expected.`,
       `[LEAKED_SLACK]: Dev team struggling with $${feature.ticker || 'ASSET'} implementation. Delivery likely delayed. Short interest rising.`,
-      `[INSIDER_DUMP]: Major stakeholder preparing to offload shares. Support levels at risk.`,
-      `[REPO_SCRAPE]: Commits surging for $${feature.ticker || 'ASSET'}. Codebase near completion. Impending IPO spike.`,
-      `[MARKET_MAKER_LOG]: Algo flagged $${feature.ticker || 'ASSET'} as severely undervalued. Accumulation phase initiated.`,
-      `[CEO_EMAIL_INTERCEPT]: "Pivot resources away from $${feature.ticker || 'ASSET'} immediately." Sell signals flashing.`
+      `[INSIDER_DUMP]: Major stakeholder preparing to offload shares. Support levels at risk.`
     ];
     return hints[Math.floor(Math.random() * hints.length)];
   };
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (cashBalance < INTEL_COST) {
       setError("INSUFFICIENT FUNDS. ACQUISITION FAILED.");
       triggerHaptic('error');
@@ -42,12 +57,18 @@ const HackerLeakModal = ({ feature, onClose }) => {
     localStorage.setItem('cash_balance', newBalance.toString());
     setCashBalance(newBalance);
 
-    // Simulate hacking/decryption delay
+    // We keep a small minimum timeout just for the UI simulation effect,
+    // but we also await the real API call.
+    const start = Date.now();
+    const newIntel = await generateIntel();
+    const elapsed = Date.now() - start;
+    const remainingTime = Math.max(0, 2500 - elapsed);
+
     setTimeout(() => {
       setLoading(false);
-      setIntel(generateIntel());
+      setIntel(newIntel);
       triggerHaptic('success');
-    }, 2500);
+    }, remainingTime);
   };
 
   return (
