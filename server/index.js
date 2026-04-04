@@ -1,4 +1,6 @@
 const express = require('express');
+const { generateHackerLeak } = require('./gemini');
+
 const cors = require('cors');
 const db = require('./db');
 const util = require('util');
@@ -598,6 +600,36 @@ app.post('/api/options/exercise/:id', async (req, res) => {
             fee: parseFloat(exercise_fee.toFixed(2)),
             net_payout: parseFloat(net_payout.toFixed(2))
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+// Hacker Leak Generator
+app.post('/api/market/hacker-leak', async (req, res) => {
+    const { title, ticker } = req.body;
+
+    try {
+        let intel = null;
+        if (title) {
+            intel = await generateHackerLeak(title, ticker);
+        }
+
+        // Fallback to random intel if API fails or is not configured
+        if (!intel) {
+            const hints = [
+                `[DECRYPTED_COMMS]: Whale wallets accumulating ${ticker || 'ASSET'} in dark pools. Upward volatility expected.`,
+                `[LEAKED_SLACK]: Dev team struggling with ${ticker || 'ASSET'} implementation. Delivery likely delayed. Short interest rising.`,
+                `[INSIDER_DUMP]: Major stakeholder preparing to offload shares. Support levels at risk.`,
+                `[REPO_SCRAPE]: Commits surging for ${ticker || 'ASSET'}. Codebase near completion. Impending IPO spike.`,
+                `[MARKET_MAKER_LOG]: Algo flagged ${ticker || 'ASSET'} as severely undervalued. Accumulation phase initiated.`,
+                `[CEO_EMAIL_INTERCEPT]: "Pivot resources away from ${ticker || 'ASSET'} immediately." Sell signals flashing.`
+            ];
+            intel = hints[Math.floor(Math.random() * hints.length)];
+        }
+
+        res.json({ intel });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
