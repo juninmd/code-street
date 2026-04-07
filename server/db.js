@@ -17,9 +17,30 @@ db.serialize(() => {
     // Enable foreign keys
     db.run('PRAGMA foreign_keys = ON');
 
+    // Workspaces Table
+    db.run(`CREATE TABLE IF NOT EXISTS workspaces (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        plan TEXT DEFAULT 'free', -- 'free', 'pro', 'enterprise'
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+        if (err) {
+            console.error('Error creating workspaces table', err.message);
+        } else {
+            console.log('Workspaces table ready.');
+            // Seed a default workspace for existing features if none exists
+            db.get("SELECT COUNT(*) as count FROM workspaces", (err, row) => {
+                if (!err && row.count === 0) {
+                    db.run("INSERT INTO workspaces (name, plan) VALUES ('Default Startup', 'free')");
+                }
+            });
+        }
+    });
+
     // Features Table
     db.run(`CREATE TABLE IF NOT EXISTS features (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        workspace_id INTEGER DEFAULT 1,
         title TEXT NOT NULL,
         description TEXT,
         votes INTEGER DEFAULT 0,
@@ -30,12 +51,22 @@ db.serialize(() => {
         deadline DATETIME,
         is_burned INTEGER DEFAULT 0,
         short_amount REAL DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (workspace_id) REFERENCES workspaces(id)
     )`, (err) => {
         if (err) {
             console.error('Error creating features table', err.message);
         } else {
             console.log('Features table ready.');
+            // Add workspace_id column if it doesn't exist
+            db.run('ALTER TABLE features ADD COLUMN workspace_id INTEGER DEFAULT 1', (err) => {
+                if (err && !err.message.includes('duplicate column')) {
+                    // console.error('Error adding workspace_id column', err.message);
+                } else {
+                    console.log('workspace_id column ready.');
+                }
+            });
+
             // Add short_amount column if it doesn't exist
             db.run('ALTER TABLE features ADD COLUMN short_amount REAL DEFAULT 0', (err) => {
                 if (err && !err.message.includes('duplicate column')) {

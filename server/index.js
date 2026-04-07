@@ -221,7 +221,65 @@ app.get('/api/stats', async (req, res) => {
         stats.total_withdrawn = totalWithdrawn;
         stats.available_balance = stats.platform_revenue - totalWithdrawn;
 
+        // MRR Calculation
+        const workspaces = await dbAll('SELECT plan FROM workspaces');
+        let mrr = 0;
+        workspaces.forEach(ws => {
+            if (ws.plan === 'pro') mrr += 49;
+            if (ws.plan === 'enterprise') mrr += 199;
+        });
+        stats.mrr = mrr;
+
         res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- Workspaces API ---
+
+// Get all workspaces
+app.get('/api/admin/workspaces', async (req, res) => {
+    try {
+        const rows = await dbAll('SELECT * FROM workspaces ORDER BY created_at DESC');
+        res.json({ data: rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Create a workspace
+app.post('/api/admin/workspaces', async (req, res) => {
+    const { name, plan } = req.body;
+    if (!name) return res.status(400).json({ error: 'Workspace name is required' });
+
+    const selectedPlan = plan || 'free';
+    const sql = 'INSERT INTO workspaces (name, plan) VALUES (?, ?)';
+
+    try {
+        const { lastID } = await dbRun(sql, [name, selectedPlan]);
+        const workspace = await dbGet('SELECT * FROM workspaces WHERE id = ?', [lastID]);
+        res.json({ message: 'Workspace created', data: workspace });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update workspace plan
+app.put('/api/admin/workspaces/:id/plan', async (req, res) => {
+    const { id } = req.params;
+    const { plan } = req.body;
+
+    if (!['free', 'pro', 'enterprise'].includes(plan)) {
+        return res.status(400).json({ error: 'Invalid plan type' });
+    }
+
+    try {
+        const { changes } = await dbRun('UPDATE workspaces SET plan = ? WHERE id = ?', [plan, id]);
+        if (changes === 0) return res.status(404).json({ error: 'Workspace not found' });
+
+        const workspace = await dbGet('SELECT * FROM workspaces WHERE id = ?', [id]);
+        res.json({ message: 'Plan updated', data: workspace });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target, CreditCard, History, AlertTriangle, Bitcoin, Star } from 'lucide-react';
+import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target, CreditCard, History, AlertTriangle, Bitcoin, Star, Server, Plus, Edit2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { format } from 'date-fns';
 import { triggerHaptic } from '../utils/haptics';
@@ -9,6 +9,9 @@ const AdminWealth = () => {
   const [recentPledges, setRecentPledges] = useState([]);
   const [features, setFeatures] = useState([]);
   const [payouts, setPayouts] = useState([]);
+  const [workspaces, setWorkspaces] = useState([]);
+  const [newWorkspaceName, setNewWorkspaceName] = useState('');
+  const [newWorkspacePlan, setNewWorkspacePlan] = useState('free');
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [transferred, setTransferred] = useState(false);
@@ -20,25 +23,65 @@ const AdminWealth = () => {
 
   const fetchData = async () => {
     try {
-      const [statsRes, pledgesRes, featuresRes, payoutsRes] = await Promise.all([
+      const [statsRes, pledgesRes, featuresRes, payoutsRes, workspacesRes] = await Promise.all([
           fetch('/api/stats'),
           fetch('/api/pledges/recent'),
           fetch('/api/features'),
-          fetch('/api/admin/payouts')
+          fetch('/api/admin/payouts'),
+          fetch('/api/admin/workspaces')
       ]);
       const statsJson = await statsRes.json();
       const pledgesJson = await pledgesRes.json();
       const featuresJson = await featuresRes.json();
       const payoutsJson = await payoutsRes.json();
+      const workspacesJson = await workspacesRes.json();
 
       setStats(statsJson);
       setRecentPledges(pledgesJson.data || []);
       setFeatures(featuresJson.data || []);
       setPayouts(payoutsJson.data || []);
+      setWorkspaces(workspacesJson.data || []);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateWorkspace = async (e) => {
+    e.preventDefault();
+    if (!newWorkspaceName) return;
+
+    try {
+      const res = await fetch('/api/admin/workspaces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newWorkspaceName, plan: newWorkspacePlan })
+      });
+      if (res.ok) {
+        setNewWorkspaceName('');
+        setNewWorkspacePlan('free');
+        fetchData();
+        triggerHaptic('success');
+      }
+    } catch (err) {
+      console.error("Failed to create workspace", err);
+    }
+  };
+
+  const handleUpdatePlan = async (id, newPlan) => {
+    try {
+      const res = await fetch(`/api/admin/workspaces/${id}/plan`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: newPlan })
+      });
+      if (res.ok) {
+        fetchData();
+        triggerHaptic('success');
+      }
+    } catch (err) {
+      console.error("Failed to update plan", err);
     }
   };
 
@@ -221,6 +264,22 @@ const AdminWealth = () => {
                   </span>
                   ONLINE
               </span>
+          </div>
+      </div>
+
+      {/* SaaS MRR Metric */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-gradient-to-r from-blue-900 to-indigo-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden group select-none md:col-span-4 lg:col-span-1">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                  <Server className="w-24 h-24" />
+              </div>
+              <div className="relative z-10">
+                  <p className="text-blue-200 text-xs font-bold uppercase tracking-wider mb-1">SaaS MRR (Simulated)</p>
+                  <h2 className="text-4xl font-mono font-bold text-white">
+                      ${(stats?.mrr || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </h2>
+                  <p className="mt-2 text-xs text-blue-300">From active workspace subscriptions.</p>
+              </div>
           </div>
       </div>
 
@@ -515,6 +574,92 @@ const AdminWealth = () => {
                             <tr>
                                 <td colSpan="3" className="px-6 py-12 text-center text-gray-500 text-sm">
                                     No withdrawals yet.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 mb-8">
+        {/* SaaS Workspace Management */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <Server className="w-5 h-5 text-indigo-500" />
+                    SaaS Workspaces (Phase 3)
+                </h3>
+            </div>
+            <div className="p-4 border-b border-gray-100 bg-white">
+                <form onSubmit={handleCreateWorkspace} className="flex gap-2">
+                    <input
+                        type="text"
+                        placeholder="Company/Team Name"
+                        value={newWorkspaceName}
+                        onChange={(e) => setNewWorkspaceName(e.target.value)}
+                        className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border"
+                        required
+                    />
+                    <select
+                        value={newWorkspacePlan}
+                        onChange={(e) => setNewWorkspacePlan(e.target.value)}
+                        className="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border bg-white"
+                    >
+                        <option value="free">Free ($0)</option>
+                        <option value="pro">Pro ($49)</option>
+                        <option value="enterprise">Enterprise ($199)</option>
+                    </select>
+                    <button
+                        type="submit"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-1"
+                    >
+                        <Plus className="w-4 h-4" /> Add
+                    </button>
+                </form>
+            </div>
+            <div className="overflow-x-auto flex-1 max-h-64 overflow-y-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50 sticky top-0">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Workspace</th>
+                            <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Plan</th>
+                            <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {workspaces.map((ws) => (
+                            <tr key={ws.id} className="hover:bg-gray-50 transition-colors">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm font-bold text-gray-900">{ws.name}</div>
+                                    <div className="text-xs text-gray-400 font-mono">ID: {ws.id}</div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                        ${ws.plan === 'enterprise' ? 'bg-purple-100 text-purple-800' :
+                                          ws.plan === 'pro' ? 'bg-blue-100 text-blue-800' :
+                                          'bg-gray-100 text-gray-800'}`}>
+                                        {ws.plan.toUpperCase()}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <select
+                                        value={ws.plan}
+                                        onChange={(e) => handleUpdatePlan(ws.id, e.target.value)}
+                                        className="text-xs rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-1 pl-2 pr-6 border bg-white"
+                                    >
+                                        <option value="free">Free</option>
+                                        <option value="pro">Pro</option>
+                                        <option value="enterprise">Enterprise</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        ))}
+                        {workspaces.length === 0 && (
+                            <tr>
+                                <td colSpan="3" className="px-6 py-12 text-center text-gray-500 text-sm">
+                                    No workspaces provisioned.
                                 </td>
                             </tr>
                         )}
