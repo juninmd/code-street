@@ -222,13 +222,8 @@ app.get('/api/stats', async (req, res) => {
         stats.available_balance = stats.platform_revenue - totalWithdrawn;
 
         // MRR Calculation
-        const workspaces = await dbAll('SELECT plan FROM workspaces');
-        let mrr = 0;
-        workspaces.forEach(ws => {
-            if (ws.plan === 'pro') mrr += 49;
-            if (ws.plan === 'enterprise') mrr += 199;
-        });
-        stats.mrr = mrr;
+        const mrrRow = await dbGet("SELECT SUM(CASE WHEN plan = 'pro' THEN 49 WHEN plan = 'enterprise' THEN 199 ELSE 0 END) as mrr FROM workspaces");
+        stats.mrr = mrrRow?.mrr || 0;
 
         res.json(stats);
     } catch (err) {
@@ -253,7 +248,7 @@ app.post('/api/admin/workspaces', async (req, res) => {
     const { name, plan } = req.body;
     if (!name) return res.status(400).json({ error: 'Workspace name is required' });
 
-    const selectedPlan = plan || 'free';
+    const selectedPlan = ['free', 'pro', 'enterprise'].includes(plan) ? plan : 'free';
     const sql = 'INSERT INTO workspaces (name, plan) VALUES (?, ?)';
 
     try {
