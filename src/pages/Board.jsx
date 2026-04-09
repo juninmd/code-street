@@ -9,6 +9,7 @@ import SniperMode from '../components/SniperMode';
 import QuantumTradeModal from '../components/QuantumTradeModal';
 import Sparkline from '../components/Sparkline';
 import IPOLaunch from '../components/IPOLaunch';
+import ETFDashboard from '../components/ETFDashboard';
 import { addToPortfolio } from '../utils/portfolio';
 import { triggerHaptic } from '../utils/haptics';
 
@@ -252,6 +253,8 @@ const Board = () => {
 
   return (
     <div className="space-y-6">
+      <ETFDashboard />
+
       {/* Global Stats Banner */}
       <div className="bg-emerald-900 rounded-2xl p-6 mb-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-800 rounded-full mix-blend-multiply filter blur-3xl opacity-20 -mr-16 -mt-16"></div>
