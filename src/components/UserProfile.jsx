@@ -35,7 +35,7 @@ const UserProfile = () => {
 
     const handleSimulateChallengeProgress = (id) => {
         const newChallenges = challenges.map(c => {
-            if (c.id === id && c.progress < c.goal) {
+            if (c.id === id && !c.claimed && c.progress < c.goal) {
                 return { ...c, progress: c.goal };
             }
             return c;
@@ -44,6 +44,9 @@ const UserProfile = () => {
     };
 
     const handleClaimChallenge = (id, reward) => {
+        const challenge = challenges.find(c => c.id === id);
+        if (!challenge || challenge.claimed || challenge.progress < challenge.goal) return;
+
         const newChallenges = challenges.map(c => {
             if (c.id === id) {
                 return { ...c, claimed: true };
@@ -52,10 +55,9 @@ const UserProfile = () => {
         });
         saveChallenges(newChallenges);
 
-        const currentBalance = parseFloat(localStorage.getItem('cash_balance') || '0');
-        const updatedBalance = currentBalance + reward;
+        const updatedBalance = cashBalance + reward;
         setCashBalance(updatedBalance);
-        localStorage.setItem('cash_balance', updatedBalance.toString());
+        localStorage.setItem('cash_balance', updatedBalance.toFixed(2));
         setNetWorth(prev => prev + reward);
 
         triggerHaptic('success');
