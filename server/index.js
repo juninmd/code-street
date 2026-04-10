@@ -29,6 +29,100 @@ const dbRun = (sql, params = []) => {
     });
 };
 
+
+// --- ETF / Market Indexes ---
+app.get('/api/etfs', async (req, res) => {
+    try {
+        const rows = await dbAll('SELECT * FROM features WHERE status != "rejected" AND status != "completed"');
+
+        // Group by category
+        const categories = {};
+        rows.forEach(row => {
+            const cat = row.category || 'other';
+            if (!categories[cat]) categories[cat] = [];
+            const pledge = row.pledged_amount || 0;
+            const short_amount = row.short_amount || 0;
+            const current_price = Math.max(0.01, 1.00 + (row.votes * 0.10) + (pledge * 0.001) - (short_amount * 0.001));
+            categories[cat].push({ ...row, current_price });
+        });
+
+        const etfs = Object.keys(categories).map(cat => {
+            const features = categories[cat];
+            const avgPrice = features.reduce((sum, f) => sum + f.current_price, 0) / features.length;
+            const totalVolume = features.reduce((sum, f) => sum + (f.pledged_amount || 0), 0);
+            const totalShorts = features.reduce((sum, f) => sum + (f.short_amount || 0), 0);
+
+            // Ticker generation based on category
+            let ticker = cat.toUpperCase().slice(0, 3) + '500';
+            if (cat === 'ai') ticker = 'AITX';
+            if (cat === 'frontend') ticker = 'UI100';
+            if (cat === 'backend') ticker = 'SRVR';
+            if (cat === 'mobile') ticker = 'MOBI';
+
+            return {
+                id: `etf-${cat}`,
+                name: `${cat.charAt(0).toUpperCase() + cat.slice(1)} Innovation Index`,
+                ticker: ticker,
+                category: cat,
+                current_price: parseFloat(avgPrice.toFixed(2)),
+                volume: totalVolume,
+                short_volume: totalShorts,
+                components_count: features.length,
+                day_change: parseFloat((((features.length * 13.5) % 10) - 5).toFixed(2)) // deterministic fake change
+            };
+        });
+
+        res.json({ data: etfs });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/etfs/buy', async (req, res) => {
+    const { category, amount, is_dark_pool } = req.body;
+
+    if (!category || !amount || amount <= 0) {
+        return res.status(400).json({ error: 'Invalid ETF purchase request' });
+    }
+
+    try {
+        const features = await dbAll('SELECT id FROM features WHERE category = ? AND status != "rejected" AND status != "completed"', [category]);
+        if (features.length === 0) {
+            return res.status(400).json({ error: 'No features found in this category' });
+        }
+
+        // Distribute amount equally
+        const splitAmount = amount / features.length;
+
+        await dbRun('BEGIN TRANSACTION');
+
+        for (const feature of features) {
+            const amountAfterFee = is_dark_pool ? splitAmount * 0.85 : splitAmount * 0.95;
+            const feeAmount = is_dark_pool ? splitAmount * 0.15 : splitAmount * 0.05;
+
+            await dbRun('UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?', [amountAfterFee, feature.id]);
+
+            await dbRun(
+                'INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)',
+                [feature.id, amountAfterFee, is_dark_pool ? 1 : 0]
+            );
+
+            // Record platform fee
+            await dbRun(
+                'INSERT INTO payouts (amount, status) VALUES (?, ?)',
+                [feeAmount, 'platform_fee']
+            );
+        }
+
+        await dbRun('COMMIT');
+        res.json({ success: true, message: `Successfully invested ${amount} across ${features.length} ${category} features.` });
+    } catch (err) {
+        await dbRun('ROLLBACK');
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
 // Get all features (with optional category filter)
 app.get('/api/features', async (req, res) => {
   const { category } = req.query;

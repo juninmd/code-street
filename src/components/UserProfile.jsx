@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Shield, TrendingUp, Wallet, Star, Gift, Zap } from 'lucide-react';
+import { DollarSign, Shield, TrendingUp, Wallet, Star, Gift, Zap, Share2, Link as LinkIcon, Users } from 'lucide-react';
 import { getPortfolio, addToPortfolio } from '../utils/portfolio';
 import { triggerHaptic } from '../utils/haptics';
 import confetti from 'canvas-confetti';
@@ -13,6 +13,11 @@ const UserProfile = () => {
         const [username, setUsername] = useState('Trader');
     const [openingCrate, setOpeningCrate] = useState(false);
     const [features, setFeatures] = useState([]);
+
+    // Referral state
+    const [referrals, setReferrals] = useState(0);
+    const [referralEarnings, setReferralEarnings] = useState(0);
+    const [sharingLink, setSharingLink] = useState(false);
 
     useEffect(() => {
         // Load Portfolio & Balance
@@ -69,6 +74,40 @@ const UserProfile = () => {
         }, 800);
     };
 
+
+    const handleSimulateSharing = () => {
+        if (sharingLink) return;
+        setSharingLink(true);
+        triggerHaptic('light');
+
+        // Fake delay to simulate people clicking
+        setTimeout(() => {
+            const newSignups = Math.floor(Math.random() * 3); // 0 to 2 new signups
+            if (newSignups > 0) {
+                const bonus = newSignups * 5.00; // $5 per referral
+
+                const currentBalance = parseFloat(localStorage.getItem('cash_balance') || '0');
+                const nextBalance = currentBalance + bonus;
+
+                const nextReferrals = referrals + newSignups;
+                const nextEarnings = referralEarnings + bonus;
+
+                localStorage.setItem('cash_balance', nextBalance.toFixed(2));
+                localStorage.setItem('referrals_count', nextReferrals.toString());
+                localStorage.setItem('referral_earnings', nextEarnings.toFixed(2));
+
+                setCashBalance(nextBalance);
+                setReferrals(nextReferrals);
+                setReferralEarnings(nextEarnings);
+
+                triggerHaptic('success');
+                alert(`Viral! You got ${newSignups} new referral(s) and earned $${bonus.toFixed(2)} in affiliate commissions!`);
+            } else {
+                alert("Link shared, but nobody signed up yet. Try again!");
+            }
+            setSharingLink(false);
+        }, 1500);
+    };
 
     const handleOpenCrate = () => {
         const CRATE_COST = 10;
