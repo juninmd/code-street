@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle, User, Activity } from 'lucide-react';
+import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle, User, Activity, Brain } from 'lucide-react';
 import LiveTicker from './components/LiveTicker';
 import IPOAlert from './components/IPOAlert';
 
@@ -160,6 +160,19 @@ const Layout = () => {
                   <User className="w-4 h-4 mr-2" />
                   Profile
                 </NavLink>
+                <NavLink
+                  to="/foundry"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive
+                        ? 'border-purple-500 text-purple-900'
+                        : 'border-transparent text-purple-600 hover:border-purple-300 hover:text-purple-800'
+                    }`
+                  }
+                >
+                  <Brain className="w-4 h-4 mr-2" />
+                  Foundry
+                </NavLink>
               </div>
             </div>
           </div>
@@ -211,7 +224,7 @@ const Layout = () => {
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 sm:hidden pb-safe">
-        <div className="grid grid-cols-5 h-16">
+        <div className="grid grid-cols-6 h-16 overflow-x-auto">
           <NavLink
             to="/"
             className={({ isActive }) =>
@@ -267,6 +280,17 @@ const Layout = () => {
           >
             <Map className="w-6 h-6" />
             <span className="text-xs font-medium">Futures</span>
+          </NavLink>
+          <NavLink
+            to="/foundry"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center space-y-1 ${
+                isActive ? 'text-purple-600' : 'text-gray-500 hover:text-purple-700'
+              }`
+            }
+          >
+            <Brain className="w-6 h-6" />
+            <span className="text-xs font-medium">Foundry</span>
           </NavLink>
         </div>
       </nav>

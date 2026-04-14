@@ -1,5 +1,5 @@
 const express = require('express');
-const { generateHackerLeak } = require('./gemini');
+const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint } = require('./gemini');
 
 const cors = require('cors');
 const db = require('./db');
@@ -960,6 +960,92 @@ app.post('/api/market/simulate', async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Foundry Generate Idea Route
+app.post('/api/foundry/generate', async (req, res) => {
+    try {
+        let idea = await generateBusinessIdea();
+
+        if (!idea) {
+             // Fallback if AI fails or no key is provided
+             const adjectives = ['AI-Powered', 'Decentralized', 'Automated', 'Cloud-Native', 'Real-time'];
+             const nouns = ['CRM', 'ERP', 'Analytics', 'Workflow', 'Marketplace'];
+             const targets = ['Freelancers', 'Enterprise', 'Creators', 'Agencies', 'Developers'];
+
+             const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+             const noun = nouns[Math.floor(Math.random() * nouns.length)];
+             const target = targets[Math.floor(Math.random() * targets.length)];
+
+             idea = {
+                 title: `${adjective} ${noun}`,
+                 ticker: noun.substring(0, 4).toUpperCase(),
+                 description: `A ${adjective.toLowerCase()} ${noun.toLowerCase()} built specifically for ${target.toLowerCase()}.`,
+                 initial_price: Math.floor(Math.random() * 40) + 10
+             };
+        }
+
+        // Insert as an IPO into features
+        const query = `INSERT INTO features (title, description, ticker) VALUES (?, ?, ?)`;
+        const result = await dbRun(query, [idea.title, idea.description, idea.ticker]);
+        const newFeatureId = result.lastID;
+
+        // Update IPO timestamp
+        latestIPOTimestamp = Date.now();
+
+        // Simulate initial market demand by inserting initial pledges
+        const numPledges = Math.floor(Math.random() * 5) + 3; // 3 to 7 initial pledges
+        let totalPledged = 0;
+
+        for (let i = 0; i < numPledges; i++) {
+            const amount = parseFloat((Math.random() * 50 + 10).toFixed(2));
+            const shares = amount / 10; // Simulated share calculation
+            await dbRun(
+                 `INSERT INTO pledges (feature_id, amount) VALUES (?, ?)`,
+                 [newFeatureId, amount]
+            );
+            totalPledged += amount;
+        }
+
+        await dbRun('UPDATE features SET pledged_amount = ?, votes = ? WHERE id = ?', [totalPledged, numPledges * 5, newFeatureId]);
+
+        // Return the idea and the created ID
+        res.json({ idea: { ...idea, id: newFeatureId, pledged_amount: totalPledged } });
+
+    } catch (err) {
+        console.error("Foundry Generate Error:", err);
+        res.status(500).json({ error: "Failed to generate AI idea" });
+    }
+});
+
+// Foundry Blueprint Generator Route
+app.post('/api/foundry/blueprint', async (req, res) => {
+    const { title, description } = req.body;
+
+    if (!title || !description) {
+        return res.status(400).json({ error: "Title and description are required" });
+    }
+
+    try {
+        let blueprint = await generateExecutionBlueprint(title, description);
+
+        if (!blueprint) {
+            blueprint = `
+### Execution Blueprint: ${title}
+
+1.  **Target Audience:** Early adopters in the specific niche.
+2.  **Core Features (MVP):** Basic authentication, core value proposition workflow, and a simple dashboard.
+3.  **Tech Stack:** React (Frontend), Node.js/Express (Backend), SQLite/PostgreSQL (Database).
+4.  **Monetization Strategy:** Freemium model with a $15/mo Pro tier.
+5.  **First Marketing Step:** Launch on Product Hunt and post in relevant Reddit communities.
+            `.trim();
+        }
+
+        res.json({ blueprint });
+    } catch (err) {
+        console.error("Foundry Blueprint Error:", err);
+        res.status(500).json({ error: "Failed to generate execution blueprint" });
     }
 });
 
