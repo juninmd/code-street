@@ -42,6 +42,13 @@
       "description": "Admin Wealth Dashboard",
       "url": "/admin/wealth",
       "icons": [{ "src": "/vite.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Foundry",
+      "short_name": "Foundry",
+      "description": "Generate AI Business Ideas",
+      "url": "/foundry",
+      "icons": [{ "src": "/vite.svg", "sizes": "192x192" }]
     }
   ]
 }

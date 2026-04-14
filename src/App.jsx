@@ -12,6 +12,7 @@ import WhaleAlert from './components/WhaleAlert';
 import DividendAlert from './components/DividendAlert';
 import NewsTicker from './components/NewsTicker';
 import UserProfile from './components/UserProfile';
+import Foundry from './pages/Foundry';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
         <Route path="hunter" element={<HunterProfile />} />
         <Route path="admin/wealth" element={<AdminWealth />} />
         <Route path="profile" element={<UserProfile />} />
+        <Route path="foundry" element={<Foundry />} />
       </Route>
     </Routes>
     </>
