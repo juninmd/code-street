@@ -71,7 +71,7 @@ Example output:
 `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: prompt,
             config: {
                 temperature: 0.9,
@@ -79,7 +79,7 @@ Example output:
             }
         });
 
-        const text = response.text.trim();
+        const text = response.text().trim();
         return JSON.parse(text);
     } catch (error) {
         console.error("Gemini API Error (generateBusinessIdea):", error);
@@ -111,14 +111,14 @@ Keep it punchy, actionable, and under 300 words.
 `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: prompt,
             config: {
                 temperature: 0.7,
             }
         });
 
-        return response.text.trim();
+        return response.text().trim();
     } catch (error) {
         console.error("Gemini API Error (generateExecutionBlueprint):", error);
         return null;
