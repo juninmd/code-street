@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Brain, Sparkles, TrendingUp, DollarSign, FileText, ArrowRight, Activity, Loader2 } from 'lucide-react';
+import { Brain, Sparkles, TrendingUp, DollarSign, FileText, ArrowRight, Activity, Loader2, Cpu, Rocket } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics';
 
 const Foundry = () => {
@@ -7,6 +7,8 @@ const Foundry = () => {
     const [generatingBlueprint, setGeneratingBlueprint] = useState(false);
     const [idea, setIdea] = useState(null);
     const [blueprint, setBlueprint] = useState(null);
+    const [generatingMVP, setGeneratingMVP] = useState(false);
+    const [mvpCode, setMvpCode] = useState(null);
     const [error, setError] = useState('');
 
     const generateIdea = async () => {
@@ -14,6 +16,7 @@ const Foundry = () => {
         setError('');
         setIdea(null);
         setBlueprint(null);
+        setMvpCode(null);
         triggerHaptic('medium');
 
         try {
@@ -55,6 +58,31 @@ const Foundry = () => {
             triggerHaptic('error');
         } finally {
             setGeneratingBlueprint(false);
+        }
+    };
+
+    const generateMVP = async () => {
+        if (!idea) return;
+        setGeneratingMVP(true);
+        setError('');
+        triggerHaptic('light');
+
+        try {
+            const response = await fetch('/api/foundry/build-mvp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: idea.title, description: idea.description }),
+            });
+            if (!response.ok) throw new Error('Failed to generate MVP code');
+            const data = await response.json();
+            setMvpCode(data.code);
+            triggerHaptic('success');
+        } catch (err) {
+            console.error(err);
+            setError('Failed to generate MVP code. The builder is currently busy.');
+            triggerHaptic('error');
+        } finally {
+            setGeneratingMVP(false);
         }
     };
 
@@ -181,7 +209,65 @@ const Foundry = () => {
                         <div>
                             <p className="font-bold text-white">Blueprint Ready. Time to Build.</p>
                             <p className="text-sm text-purple-200 mt-1">
-                                The market has spoken and the plan is laid out. Your next step is to execute. Go build the MVP and claim your share of the market.
+                                The market has spoken and the plan is laid out. Your next step is to execute.
+                            </p>
+                        </div>
+                    </div>
+
+                    {!mvpCode && (
+                        <div className="flex justify-center border-t border-gray-800 pt-8 mt-8">
+                            <button
+                                onClick={generateMVP}
+                                disabled={generatingMVP}
+                                className="bg-emerald-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-emerald-500 transition-colors flex items-center gap-2 disabled:opacity-70 shadow-lg shadow-emerald-900/50"
+                            >
+                                {generatingMVP ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Coding MVP...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Cpu className="w-5 h-5" />
+                                        Generate MVP Landing Page
+                                        <ArrowRight className="w-5 h-5 ml-1" />
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* MVP Code Section */}
+            {mvpCode && (
+                <div className="bg-slate-900 rounded-xl shadow-2xl border border-slate-700 p-6 sm:p-8 text-slate-100 animate-in slide-in-from-bottom-8 duration-700">
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+                        <div className="flex items-center gap-3">
+                            <Cpu className="w-6 h-6 text-emerald-400" />
+                            <h3 className="text-2xl font-bold text-white">MVP Landing Page Code</h3>
+                        </div>
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(mvpCode);
+                                triggerHaptic('success');
+                            }}
+                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-700"
+                        >
+                            Copy HTML
+                        </button>
+                    </div>
+                    <div className="relative">
+                        <pre className="bg-slate-950 p-6 rounded-lg overflow-x-auto border border-slate-800 text-sm font-mono text-emerald-300 shadow-inner">
+                            <code>{mvpCode}</code>
+                        </pre>
+                    </div>
+                    <div className="mt-8 p-4 bg-emerald-900/20 border border-emerald-500/30 rounded-lg flex items-start gap-4">
+                        <Rocket className="w-8 h-8 text-emerald-400 flex-shrink-0" />
+                        <div>
+                            <p className="font-bold text-white">Your MVP is ready to launch.</p>
+                            <p className="text-sm text-emerald-200 mt-1">
+                                Save this code as <code>index.html</code> and open it in your browser. You are now a Tech Founder.
                             </p>
                         </div>
                     </div>

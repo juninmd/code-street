@@ -1,5 +1,5 @@
 const express = require('express');
-const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint } = require('./gemini');
+const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode } = require('./gemini');
 
 const cors = require('cors');
 const db = require('./db');
@@ -1046,6 +1046,43 @@ app.post('/api/foundry/blueprint', async (req, res) => {
     } catch (err) {
         console.error("Foundry Blueprint Error:", err);
         res.status(500).json({ error: "Failed to generate execution blueprint" });
+    }
+});
+
+// Foundry MVP Builder Route
+app.post('/api/foundry/build-mvp', async (req, res) => {
+    const { title, description } = req.body;
+
+    if (!title || !description) {
+        return res.status(400).json({ error: "Title and description are required" });
+    }
+
+    try {
+        let mvpCode = await generateMVPCode(title, description);
+
+        if (!mvpCode) {
+            mvpCode = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title} - MVP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen">
+    <div class="max-w-2xl text-center p-8 bg-white rounded-xl shadow-xl">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-4">${title}</h1>
+        <p class="text-xl text-gray-600 mb-8">${description}</p>
+        <button class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition">Get Started</button>
+    </div>
+</body>
+</html>`;
+        }
+
+        res.json({ code: mvpCode });
+    } catch (err) {
+        console.error("Foundry MVP Builder Error:", err);
+        res.status(500).json({ error: "Failed to generate MVP code" });
     }
 });
 
