@@ -125,4 +125,48 @@ Keep it punchy, actionable, and under 300 words.
     }
 }
 
-module.exports = { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint };
+async function generateMVPCode(title, description) {
+    if (!process.env.GEMINI_API_KEY || !GoogleGenAI) {
+        return null;
+    }
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const prompt = `
+You are an expert Frontend Developer and UI Designer. A user wants to build the following SaaS idea:
+
+Title: ${title}
+Description: ${description}
+
+Generate a complete, single-file HTML landing page for this MVP.
+Use Tailwind CSS via CDN (<script src="https://cdn.tailwindcss.com"></script>).
+Include a Hero section with a strong headline and Call to Action, a Features section, and a simple Footer.
+The design should be modern, clean, and highly converting.
+
+Return ONLY the raw HTML code. Do not include markdown code blocks (\`\`\`html) or any other text.
+`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: prompt,
+            config: {
+                temperature: 0.7,
+            }
+        });
+
+        // Strip markdown code blocks if the model still outputs them
+        let code = response.text.trim();
+        if (code.startsWith('\`\`\`html')) {
+            code = code.replace(/^\`\`\`html\n/, '').replace(/\n\`\`\`$/, '');
+        } else if (code.startsWith('\`\`\`')) {
+            code = code.replace(/^\`\`\`\n/, '').replace(/\n\`\`\`$/, '');
+        }
+
+        return code;
+    } catch (error) {
+        console.error("Gemini API Error (generateMVPCode):", error);
+        return null;
+    }
+}
+
+module.exports = { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode };
