@@ -13,6 +13,7 @@ import DividendAlert from './components/DividendAlert';
 import NewsTicker from './components/NewsTicker';
 import UserProfile from './components/UserProfile';
 import Foundry from './pages/Foundry';
+import Pricing from './pages/Pricing';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="admin/wealth" element={<AdminWealth />} />
         <Route path="profile" element={<UserProfile />} />
         <Route path="foundry" element={<Foundry />} />
+        <Route path="pricing" element={<Pricing />} />
       </Route>
     </Routes>
     </>
