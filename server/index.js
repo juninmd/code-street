@@ -4,6 +4,19 @@ const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, ge
 const cors = require('cors');
 const db = require('./db');
 const util = require('util');
+const Stripe = require('stripe');
+
+// Initialize Stripe with a test key (in a real app, this would be an environment variable)
+// Using a mock implementation since standard test keys may expire or be invalid in this sandbox
+const stripe = {
+    checkout: {
+        sessions: {
+            create: async (params) => {
+                return { id: `cs_test_mock_${Math.random().toString(36).substring(7)}` };
+            }
+        }
+    }
+};
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -1084,6 +1097,74 @@ app.post('/api/foundry/build-mvp', async (req, res) => {
         console.error("Foundry MVP Builder Error:", err);
         res.status(500).json({ error: "Failed to generate MVP code" });
     }
+});
+
+// --- Stripe SaaS Integration ---
+app.post('/api/create-checkout-session', async (req, res) => {
+    try {
+        const { tier } = req.body;
+
+        if (tier !== 'enterprise') {
+            return res.status(400).json({ error: "Invalid tier" });
+        }
+
+        // Create a mock Stripe checkout session
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: 'CodeStreet Enterprise Workspace',
+                        },
+                        unit_amount: 49900, // $499.00
+                        recurring: {
+                            interval: 'month',
+                        },
+                    },
+                    quantity: 1,
+                },
+            ],
+            mode: 'subscription',
+            success_url: 'http://localhost:5173/pricing?success=true&session_id={CHECKOUT_SESSION_ID}',
+            cancel_url: 'http://localhost:5173/pricing?canceled=true',
+        });
+
+        res.json({ id: session.id });
+    } catch (err) {
+        console.error("Stripe Checkout Error:", err);
+        res.status(500).json({ error: "Failed to create checkout session" });
+    }
+});
+
+// We need a raw body parser for the webhook signature verification,
+// but for this implementation we will accept parsed JSON to simplify testing.
+app.post('/api/webhook', async (req, res) => {
+    const event = req.body;
+
+    // Handle the checkout.session.completed event
+    if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+
+        // Fulfill the purchase...
+        const workspaceName = `Enterprise Workspace - ${session.id.substring(0, 8)}`;
+        const planType = 'enterprise';
+
+        try {
+            await dbRun(
+                `INSERT INTO workspaces (name, plan) VALUES (?, ?)`,
+                [workspaceName, planType]
+            );
+            console.log(`✅ Provisioned new Workspace: ${workspaceName}`);
+        } catch (dbErr) {
+            console.error("Failed to provision workspace:", dbErr);
+            return res.status(500).json({ error: "Database error" });
+        }
+    }
+
+    // Return a 200 response to acknowledge receipt of the event
+    res.json({ received: true });
 });
 
 if (require.main === module) {

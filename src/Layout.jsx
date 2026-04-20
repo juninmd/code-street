@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle, User, Activity, Brain } from 'lucide-react';
+import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle, User, Activity, Brain, Building2 } from 'lucide-react';
 import LiveTicker from './components/LiveTicker';
 import IPOAlert from './components/IPOAlert';
 
@@ -173,6 +173,19 @@ const Layout = () => {
                   <Brain className="w-4 h-4 mr-2" />
                   Foundry
                 </NavLink>
+                <NavLink
+                  to="/pricing"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive
+                        ? 'border-blue-500 text-blue-900'
+                        : 'border-transparent text-blue-600 hover:border-blue-300 hover:text-blue-800'
+                    }`
+                  }
+                >
+                  <Building2 className="w-4 h-4 mr-2" />
+                  B2B SaaS
+                </NavLink>
               </div>
             </div>
           </div>
@@ -291,6 +304,17 @@ const Layout = () => {
           >
             <Brain className="w-6 h-6" />
             <span className="text-xs font-medium">Foundry</span>
+          </NavLink>
+          <NavLink
+            to="/pricing"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center space-y-1 ${
+                isActive ? 'text-blue-600' : 'text-gray-500 hover:text-blue-700'
+              }`
+            }
+          >
+            <Building2 className="w-6 h-6" />
+            <span className="text-xs font-medium">SaaS</span>
           </NavLink>
         </div>
       </nav>
