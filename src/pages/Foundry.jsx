@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Brain, Sparkles, TrendingUp, DollarSign, FileText, ArrowRight, Activity, Loader2, Cpu, Rocket } from 'lucide-react';
+import { Brain, Sparkles, TrendingUp, DollarSign, FileText, ArrowRight, Activity, Loader2, Cpu, Rocket, Megaphone } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics';
 
 const Foundry = () => {
@@ -9,6 +9,8 @@ const Foundry = () => {
     const [blueprint, setBlueprint] = useState(null);
     const [generatingMVP, setGeneratingMVP] = useState(false);
     const [mvpCode, setMvpCode] = useState(null);
+    const [generatingMarketing, setGeneratingMarketing] = useState(false);
+    const [marketingAssets, setMarketingAssets] = useState(null);
     const [error, setError] = useState('');
 
     const generateIdea = async () => {
@@ -17,6 +19,7 @@ const Foundry = () => {
         setIdea(null);
         setBlueprint(null);
         setMvpCode(null);
+        setMarketingAssets(null);
         triggerHaptic('medium');
 
         try {
@@ -83,6 +86,31 @@ const Foundry = () => {
             triggerHaptic('error');
         } finally {
             setGeneratingMVP(false);
+        }
+    };
+
+    const generateMarketing = async () => {
+        if (!idea) return;
+        setGeneratingMarketing(true);
+        setError('');
+        triggerHaptic('light');
+
+        try {
+            const response = await fetch('/api/foundry/marketing', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: idea.title, description: idea.description }),
+            });
+            if (!response.ok) throw new Error('Failed to generate marketing assets');
+            const data = await response.json();
+            setMarketingAssets(data.marketingAssets);
+            triggerHaptic('success');
+        } catch (err) {
+            console.error(err);
+            setError('Failed to generate marketing assets. The growth hacker is currently busy.');
+            triggerHaptic('error');
+        } finally {
+            setGeneratingMarketing(false);
         }
     };
 
@@ -268,6 +296,64 @@ const Foundry = () => {
                             <p className="font-bold text-white">Your MVP is ready to launch.</p>
                             <p className="text-sm text-emerald-200 mt-1">
                                 Save this code as <code>index.html</code> and open it in your browser. You are now a Tech Founder.
+                            </p>
+                        </div>
+                    </div>
+
+                    {!marketingAssets && (
+                        <div className="flex justify-center border-t border-slate-800 pt-8 mt-8">
+                            <button
+                                onClick={generateMarketing}
+                                disabled={generatingMarketing}
+                                className="bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-500 transition-colors flex items-center gap-2 disabled:opacity-70 shadow-lg shadow-blue-900/50"
+                            >
+                                {generatingMarketing ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        Hacking Growth...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Megaphone className="w-5 h-5" />
+                                        Generate Go-To-Market Assets
+                                        <ArrowRight className="w-5 h-5 ml-1" />
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Marketing Assets Section */}
+            {marketingAssets && (
+                <div className="bg-blue-950 rounded-xl shadow-2xl border border-blue-800 p-6 sm:p-8 text-blue-100 animate-in slide-in-from-bottom-8 duration-700">
+                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-blue-900">
+                        <div className="flex items-center gap-3">
+                            <Megaphone className="w-6 h-6 text-blue-400" />
+                            <h3 className="text-2xl font-bold text-white">Go-To-Market Auto-Pilot</h3>
+                        </div>
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(marketingAssets);
+                                triggerHaptic('success');
+                            }}
+                            className="bg-blue-900 hover:bg-blue-800 text-blue-200 px-4 py-2 rounded-lg text-sm font-medium transition-colors border border-blue-800"
+                        >
+                            Copy Assets
+                        </button>
+                    </div>
+                    <div className="prose prose-invert prose-blue max-w-none">
+                        <div className="whitespace-pre-wrap font-sans text-sm sm:text-base text-blue-200 leading-relaxed bg-blue-900/30 p-6 rounded-lg border border-blue-800/50">
+                            {marketingAssets}
+                        </div>
+                    </div>
+                    <div className="mt-8 p-4 bg-blue-900/40 border border-blue-500/40 rounded-lg flex items-start gap-4">
+                        <TrendingUp className="w-8 h-8 text-blue-400 flex-shrink-0" />
+                        <div>
+                            <p className="font-bold text-white">Auto-CEO Sequence Complete.</p>
+                            <p className="text-sm text-blue-200 mt-1">
+                                You have the idea, the blueprint, the code, and the marketing. The only thing left to do is execute.
                             </p>
                         </div>
                     </div>

@@ -1,5 +1,5 @@
 const express = require('express');
-const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode } = require('./gemini');
+const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets } = require('./gemini');
 
 const cors = require('cors');
 const db = require('./db');
@@ -1096,6 +1096,27 @@ app.post('/api/foundry/build-mvp', async (req, res) => {
     } catch (err) {
         console.error("Foundry MVP Builder Error:", err);
         res.status(500).json({ error: "Failed to generate MVP code" });
+    }
+});
+
+app.post('/api/foundry/marketing', async (req, res) => {
+    const { title, description } = req.body;
+
+    if (!title || !description) {
+        return res.status(400).json({ error: "Title and description are required" });
+    }
+
+    try {
+        let marketingAssets = await generateMarketingAssets(title, description);
+
+        if (!marketingAssets) {
+            marketingAssets = `### Twitter Thread\n\n1/ Introducing ${title} 🚀\n\nAre you struggling with [Problem]? We just built the solution. \n\n${description}\n\n👇 A thread on why we built this.\n\n### Cold Email\n\nSubject: Quick question about [Problem]\n\nHi [Name],\n\nI noticed you are [Relevance]. We just launched ${title} to help with exactly that. \n\n${description}\n\nWorth a 5 min chat?\n\nBest,\nFounder`;
+        }
+
+        res.json({ marketingAssets });
+    } catch (err) {
+        console.error("Foundry Marketing Assets Error:", err);
+        res.status(500).json({ error: "Failed to generate marketing assets" });
     }
 });
 

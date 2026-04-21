@@ -169,4 +169,39 @@ Return ONLY the raw HTML code. Do not include markdown code blocks (\`\`\`html) 
     }
 }
 
-module.exports = { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode };
+async function generateMarketingAssets(title, description) {
+    if (!process.env.GEMINI_API_KEY || !GoogleGenAI) {
+        return null;
+    }
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const prompt = `
+You are an elite Growth Hacker and Copywriter. A user is launching the following SaaS idea:
+
+Title: ${title}
+Description: ${description}
+
+Generate two Go-To-Market assets formatted in Markdown:
+1. A viral Twitter thread (3-5 tweets) announcing the launch and explaining the problem it solves. Use emojis and engaging hooks.
+2. A high-converting Cold Email template to reach out to early potential customers. Keep it short, personalized, and focused on value.
+
+Do not include any other text besides these two assets.
+`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: prompt,
+            config: {
+                temperature: 0.8,
+            }
+        });
+
+        return response.text().trim();
+    } catch (error) {
+        console.error("Gemini API Error (generateMarketingAssets):", error);
+        return null;
+    }
+}
+
+module.exports = { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets };
