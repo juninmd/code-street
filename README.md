@@ -2,9 +2,11 @@
 
 ![React 19](https://img.shields.io/badge/frontend-React%2019-blue.svg)
 ![Node.js](https://img.shields.io/badge/backend-Node.js-green.svg)
+![ArgoCD](https://img.shields.io/badge/ArgoCD-Synced-success?style=flat-square&logo=argocd)
 ![Tailwind CSS v4](https://img.shields.io/badge/UI-Tailwind%20v4-blueviolet.svg)
 ![PWA](https://img.shields.io/badge/mobile-PWA%20Ready-orange.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
+
 
 **CodeStreet** é a primeira plataforma de roadmap financiada coletivamente que transforma solicitações de recursos em ativos financeiros negociáveis. É um marketplace B2B SaaS onde equipes de produto podem monetizar seu backlog através de uma simulação de mercado de alta fidelidade.
 

@@ -24,6 +24,19 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+const path = require('path');
+// Serve static files from the 'dist' directory
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// SPA catch-all: Serve index.html for any unknown routes
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
+});
+
+
 // Global variable to track the latest IPO timestamp
 let latestIPOTimestamp = Date.now();
 
