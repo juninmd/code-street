@@ -28,13 +28,7 @@ const path = require('path');
 // Serve static files from the 'dist' directory
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// SPA catch-all: Serve index.html for any unknown routes
-app.use((req, res, next) => {
-  if (req.method !== 'GET' || req.path.startsWith('/api')) {
-    return next();
-  }
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
+
 
 
 // Global variable to track the latest IPO timestamp
@@ -1199,6 +1193,12 @@ app.post('/api/webhook', async (req, res) => {
 
     // Return a 200 response to acknowledge receipt of the event
     res.json({ received: true });
+});
+
+
+// SPA catch-all: Serve index.html for any unknown routes
+app.get('(.*)', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 if (require.main === module) {
