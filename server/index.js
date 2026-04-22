@@ -1197,7 +1197,7 @@ app.post('/api/webhook', async (req, res) => {
 
 
 // SPA catch-all: Serve index.html for any unknown routes
-app.get('(.*)', (req, res) => {
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
