@@ -29,8 +29,8 @@ const path = require('path');
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // SPA catch-all: Serve index.html for any unknown routes
-app.get('*', (req, res, next) => {
-  if (req.path.startsWith('/api')) {
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || req.path.startsWith('/api')) {
     return next();
   }
   res.sendFile(path.join(__dirname, '../dist/index.html'));
