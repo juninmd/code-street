@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Brain, Sparkles, TrendingUp, DollarSign, FileText, ArrowRight, Activity, Loader2, Cpu, Rocket, Megaphone } from 'lucide-react';
+import { Brain, Sparkles, TrendingUp, DollarSign, FileText, ArrowRight, Activity, Loader2, Cpu, Rocket, Megaphone, Download } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 const Foundry = () => {
     const [generating, setGenerating] = useState(false);
@@ -111,6 +113,41 @@ const Foundry = () => {
             triggerHaptic('error');
         } finally {
             setGeneratingMarketing(false);
+        }
+    };
+
+    const downloadBusinessBundle = async () => {
+        if (!idea || !blueprint || !mvpCode || !marketingAssets) return;
+
+        triggerHaptic('light');
+        const zip = new JSZip();
+
+        const readmeContent = `# ${idea.title} (${idea.ticker})
+
+## Pitch
+${idea.description}
+
+## Projected Initial Price
+$${idea.initial_price.toFixed(2)}
+
+${blueprint}
+
+---
+
+${marketingAssets}
+`;
+
+        zip.file("README.md", readmeContent);
+        zip.file("index.html", mvpCode);
+
+        try {
+            const blob = await zip.generateAsync({ type: "blob" });
+            saveAs(blob, `${idea.ticker.toLowerCase()}_business_bundle.zip`);
+            triggerHaptic('success');
+        } catch (err) {
+            console.error("Failed to generate zip", err);
+            setError('Failed to generate business bundle.');
+            triggerHaptic('error');
         }
     };
 
@@ -357,6 +394,19 @@ const Foundry = () => {
                             </p>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Final Download Section */}
+            {idea && blueprint && mvpCode && marketingAssets && (
+                <div className="flex justify-center border-t border-gray-800 pt-8 mt-8 pb-12 animate-in fade-in duration-700 delay-300">
+                    <button
+                        onClick={downloadBusinessBundle}
+                        className="bg-gradient-to-r from-amber-500 to-orange-600 text-white px-10 py-5 rounded-2xl font-black text-lg hover:from-amber-400 hover:to-orange-500 transition-all transform hover:scale-105 flex items-center gap-3 shadow-[0_0_40px_rgba(245,158,11,0.4)] border border-amber-400/50"
+                    >
+                        <Download className="w-6 h-6 animate-bounce" />
+                        Download Full Business Bundle (ZIP)
+                    </button>
                 </div>
             )}
         </div>
