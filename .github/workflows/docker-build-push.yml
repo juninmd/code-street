@@ -3,8 +3,7 @@ name: Build and Push Docker Image
 on:
   push:
     branches:
-      - master
-      - main
+      - feat/feedback-loop-mvp-14111508819311292000
   workflow_dispatch:
 
 jobs:
