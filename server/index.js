@@ -1196,6 +1196,50 @@ app.post('/api/webhook', async (req, res) => {
 });
 
 
+// Midas Engine AI Market Maker
+app.post('/api/market/midas', async (req, res) => {
+    try {
+        const features = await dbAll('SELECT id, title, ticker, pledged_amount, votes FROM features');
+        if (features.length === 0) {
+            return res.status(404).json({ error: 'No features to trade' });
+        }
+
+        // Randomly select a feature
+        const feature = features[Math.floor(Math.random() * features.length)];
+        const amount = Math.floor(Math.random() * 4000) + 1000; // Large Whale Trade: $1000 - $5000
+        const voteCount = Math.floor(Math.random() * 500) + 100;
+
+        // Generate Hype with AI
+        const { generateMidasHype } = require('./gemini.js');
+        let hypeText = await generateMidasHype(feature.title, feature.ticker);
+
+        if (!hypeText) {
+             hypeText = `[MIDAS_ENGINE]: Massive volume detected on $${feature.ticker || 'ASSET'}. Executing algorithmic buy order.`;
+        }
+
+        // Execute Trade
+        await dbRun('INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, 0)', [feature.id, amount]);
+        await dbRun('UPDATE features SET pledged_amount = pledged_amount + ?, votes = votes + ? WHERE id = ?', [amount, voteCount, feature.id]);
+
+        // Fetch updated data
+        const updatedFeature = await dbGet('SELECT * FROM features WHERE id = ?', [feature.id]);
+
+        res.json({
+            message: 'Midas Engine Executed Trade',
+            data: {
+                feature: updatedFeature.title,
+                amount_invested: amount,
+                votes_added: voteCount,
+                new_total: updatedFeature.pledged_amount,
+                hype_text: hypeText
+            }
+        });
+    } catch (err) {
+        console.error("Midas Engine Error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // SPA catch-all: Serve index.html for any unknown routes
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));

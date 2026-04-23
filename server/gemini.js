@@ -30,7 +30,7 @@ Example output:
 `;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: prompt,
             config: {
                 temperature: 0.7,
@@ -205,3 +205,41 @@ Do not include any other text besides these two assets.
 }
 
 module.exports = { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets };
+
+async function generateMidasHype(featureTitle, featureTicker) {
+    if (!process.env.GEMINI_API_KEY || !GoogleGenAI) {
+        return null;
+    }
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const prompt = `
+You are the "Midas Engine", an advanced AI hedge fund operating in a simulated software feature stock exchange called "CodeStreet".
+You are injecting liquidity (a massive investment) into a specific asset.
+
+Feature Title: ${featureTitle}
+Feature Ticker: ${featureTicker || 'ASSET'}
+
+Write a SINGLE, provocative, "Wall Street Bets" style sentence (max 20 words) explaining why you are aggressively buying this asset.
+Prefix the message with [MIDAS_ENGINE].
+
+Example output:
+[MIDAS_ENGINE]: Accumulating $${featureTicker || 'ASSET'}. The underlying tech is undervalued and ready for a parabolic breakout. Send it.
+`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: prompt,
+            config: {
+                temperature: 0.8,
+            }
+        });
+
+        return response.text.trim();
+    } catch (error) {
+        console.error("Gemini API Error (generateMidasHype):", error);
+        return null;
+    }
+}
+
+module.exports.generateMidasHype = generateMidasHype;
