@@ -214,7 +214,7 @@ const Layout = () => {
               <Download className="w-5 h-5" />
             </div>
             <div>
-              <p className="font-bold text-sm">Install CodeStreet</p>
+              <p className="font-bold text-sm">Install Android App</p>
               <p className="text-emerald-200 text-xs">Add to home screen for quick access</p>
             </div>
           </div>

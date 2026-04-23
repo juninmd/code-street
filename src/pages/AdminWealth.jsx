@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target, CreditCard, History, AlertTriangle, Bitcoin, Star, Server, Plus, Edit2 } from 'lucide-react';
+import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap, Crosshair, Play, Pause, Target, CreditCard, History, AlertTriangle, Bitcoin, Star, Server, Plus, Edit2, Brain } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { format } from 'date-fns';
 import { triggerHaptic } from '../utils/haptics';
@@ -138,6 +138,20 @@ const AdminWealth = () => {
           }
       } catch (err) {
           console.error("Market Maker failed", err);
+      }
+  };
+
+  const handleMidasEngine = async () => {
+      triggerHaptic('heavy');
+      try {
+          const res = await fetch('/api/market/midas', { method: 'POST' });
+          const json = await res.json();
+          if (json.data) {
+              setMarketAction(json.data);
+              fetchData();
+          }
+      } catch (err) {
+          console.error("Midas Engine failed", err);
       }
   };
 
@@ -417,7 +431,14 @@ const AdminWealth = () => {
                   </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                 <button
+                    onClick={handleMidasEngine}
+                    className="bg-purple-900/50 hover:bg-purple-800/50 border border-purple-500/50 p-4 rounded-lg flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
+                 >
+                     <Brain className="w-6 h-6 text-purple-400 animate-pulse" />
+                     <span className="font-bold text-sm text-purple-200">Midas Engine</span>
+                 </button>
                  <button
                     onClick={() => handleInjectLiquidity(false)}
                     className="bg-gray-700 hover:bg-gray-600 border border-gray-600 p-4 rounded-lg flex flex-col items-center justify-center gap-2 transition-all hover:scale-105"
@@ -441,14 +462,17 @@ const AdminWealth = () => {
                  </button>
               </div>
 
-              <div className="bg-black/50 rounded-lg p-4 font-mono text-xs h-32 overflow-hidden relative">
+              <div className="bg-black/50 rounded-lg p-4 font-mono text-xs h-40 overflow-y-auto relative">
                   <div className="absolute top-2 right-2 text-gray-600">TERMINAL_OUTPUT</div>
                   {marketAction ? (
-                      <div className="space-y-1 animate-fade-in">
+                      <div className="space-y-1 animate-fade-in pr-16">
                           <p className="text-emerald-400">&gt; ORDER EXECUTED</p>
                           <p className="text-gray-300">ASSET: {marketAction.feature}</p>
                           <p className="text-gray-300">CAPITAL: ${marketAction.amount_invested}</p>
                           <p className="text-gray-300">VOTES: +{marketAction.votes_added}</p>
+                          {marketAction.hype_text && (
+                              <p className="text-purple-400 mt-2 italic break-words whitespace-normal leading-relaxed overflow-wrap-anywhere">&gt; {marketAction.hype_text}</p>
+                          )}
                           <p className="text-gray-500">------------------</p>
                       </div>
                   ) : (
