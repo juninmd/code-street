@@ -12,8 +12,16 @@ import HackerLeakModal from '../components/HackerLeakModal';
 import { Terminal } from 'lucide-react';
 import { addToPortfolio } from '../utils/portfolio';
 import { triggerHaptic } from '../utils/haptics';
+import { addXP } from '../utils/leveling';
 
 const FeatureDetail = () => {
+    const handleXP = (amount) => {
+        const { leveledUp, newLevel } = addXP(amount);
+        if (leveledUp) {
+            setTimeout(() => alert(`🎉 LEVEL UP! You reached Level ${newLevel}! 🎉`), 500);
+        }
+    };
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [feature, setFeature] = useState(null);
@@ -148,6 +156,7 @@ const FeatureDetail = () => {
               const shares = parseFloat(pledgeAmount) / (feature.current_price || 1);
               addToPortfolio(id, shares, feature.current_price || 1, 'short');
               showToast(`📉 Shorted ${shares.toFixed(2)} Shares!`);
+              handleXP(20); // 20 XP for short trade
               triggerHaptic('success');
 
               setFeature(prev => ({ ...prev, short_amount: (prev.short_amount || 0) + parseFloat(pledgeAmount) }));
@@ -176,6 +185,7 @@ const FeatureDetail = () => {
               const shares = parseFloat(pledgeAmount) / (feature.current_price || 1);
               addToPortfolio(id, shares, feature.current_price || 1, 'long');
               showToast(`🚀 Bought ${shares.toFixed(2)} Shares!`);
+              handleXP(20); // 20 XP for long trade
               triggerHaptic('success');
 
               confetti({
