@@ -2,8 +2,16 @@ import React, { useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { triggerHaptic } from '../utils/haptics';
+import { addXP } from '../utils/leveling';
 
 const OptionsChain = ({ featureId, currentPrice }) => {
+    const handleXP = (amount) => {
+        const { leveledUp, newLevel } = addXP(amount);
+        if (leveledUp) {
+            setTimeout(() => alert(`🎉 LEVEL UP! You reached Level ${newLevel}! 🎉`), 500);
+        }
+    };
+
     const [isBuying, setIsBuying] = useState(false);
 
     // Generate some deterministic options based on current price
@@ -56,6 +64,7 @@ const OptionsChain = ({ featureId, currentPrice }) => {
                     colors: option.type === 'call' ? ['#10B981', '#34D399'] : ['#EF4444', '#F87171']
                 });
                 triggerHaptic('success');
+                handleXP(30); // 30 XP for buying an option contract
                 alert(`Successfully bought ${option.type.toUpperCase()} option at strike $${option.strike.toFixed(2)} for $${totalCost.toFixed(2)}!`);
 
                 // Dispatch event to update portfolio if they navigate there

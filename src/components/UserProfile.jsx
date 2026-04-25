@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, Shield, TrendingUp, Wallet, Star, Gift, Zap, Share2, Link as LinkIcon, Users, Target, CheckCircle } from 'lucide-react';
 import { getPortfolio, addToPortfolio } from '../utils/portfolio';
 import { triggerHaptic } from '../utils/haptics';
+import { addXP, getLevelData } from '../utils/leveling';
 import confetti from 'canvas-confetti';
 
 const UserProfile = () => {
     const [portfolio, setPortfolio] = useState([]);
     const [cashBalance, setCashBalance] = useState(0);
     const [netWorth, setNetWorth] = useState(0);
+    const [levelData, setLevelData] = useState(getLevelData());
     const [badges, setBadges] = useState([]);
     const [mining, setMining] = useState(false);
         const [username, setUsername] = useState('Trader');
@@ -61,6 +63,7 @@ const UserProfile = () => {
         setNetWorth(prev => prev + reward);
 
         triggerHaptic('success');
+        handleXP(50); // 50 XP for challenge
         confetti({
             particleCount: 100,
             spread: 70,
@@ -109,6 +112,25 @@ const UserProfile = () => {
         fetch('/api/features').then(res => res.json()).then(data => setFeatures(data.data || []));
     }, []);
 
+
+    const showLevelUp = (level) => {
+        confetti({
+            particleCount: 150,
+            spread: 80,
+            origin: { y: 0.5 },
+            colors: ['#FFD700', '#FFA500', '#FF8C00']
+        });
+        alert(`🎉 LEVEL UP! You reached Level ${level}! 🎉`);
+    };
+
+    const handleXP = (amount) => {
+        const { leveledUp, newLevel } = addXP(amount);
+        setLevelData(getLevelData());
+        if (leveledUp) {
+            showLevelUp(newLevel);
+        }
+    };
+
     const handleMine = () => {
         if (mining) return;
         setMining(true);
@@ -121,6 +143,7 @@ const UserProfile = () => {
             setNetWorth(netWorth + reward);
             localStorage.setItem('cash_balance', newBalance.toString());
             setMining(false);
+            handleXP(5); // 5 XP for mining
 
             confetti({
                 particleCount: 30,
@@ -229,6 +252,8 @@ const UserProfile = () => {
             setOpeningCrate(false);
 
             triggerHaptic('success');
+            handleXP(15); // 15 XP for crate
+            setTimeout(() => alert(prizeMessage), 100);
             confetti({
                 particleCount: 150,
                 spread: 100,
@@ -282,7 +307,24 @@ const UserProfile = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+
+                    {/* Level System */}
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 mb-8 mt-6">
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                                <Star className="w-5 h-5 text-amber-500" />
+                                Rep Level {levelData.level}
+                            </h3>
+                            <span className="text-sm text-gray-500 font-bold">{levelData.xp} XP</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                            <div className="bg-gradient-to-r from-amber-400 to-orange-500 h-3 rounded-full transition-all duration-500" style={{ width: `${levelData.progressPercent}%` }}></div>
+                        </div>
+                        <p className="text-xs text-gray-400 text-right mt-1">{levelData.nextLevelXp - levelData.xp} XP to Level {levelData.level + 1}</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+
                         <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                             <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Net Worth</p>
                             <p className="text-2xl font-bold text-gray-900">${netWorth.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
