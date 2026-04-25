@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Shield, TrendingUp, Wallet, Star, Gift, Zap, Share2, Link as LinkIcon, Users, Target, CheckCircle } from 'lucide-react';
+import { DollarSign, Shield, TrendingUp, Wallet, Star, Gift, Zap, Share2, Link as LinkIcon, Users, Target, CheckCircle, Bot } from 'lucide-react';
 import { getPortfolio, addToPortfolio } from '../utils/portfolio';
 import { triggerHaptic } from '../utils/haptics';
 import { addXP, getLevelData } from '../utils/leveling';
@@ -16,6 +16,10 @@ const UserProfile = () => {
 
     const [openingCrate, setOpeningCrate] = useState(false);
 
+    // AI Auto-Trader State
+    const [autoTraderActive, setAutoTraderActive] = useState(false);
+    const [autoTraderStats, setAutoTraderStats] = useState({ profit: 0, trades: 0 });
+
     // Weekly Challenges State
     const [challenges, setChallenges] = useState([
         { id: 'c1', title: 'Vote on 3 features', reward: 5, progress: 0, goal: 3, claimed: false },
@@ -29,6 +33,71 @@ const UserProfile = () => {
             setChallenges(JSON.parse(savedChallenges));
         }
     }, []);
+
+    useEffect(() => {
+        let interval;
+        if (autoTraderActive) {
+            interval = setInterval(async () => {
+                try {
+                    const response = await fetch('/api/features');
+                    const features = await response.json();
+
+                    if (features && features.length > 0) {
+                        const randomFeature = features[Math.floor(Math.random() * features.length)];
+
+                        // Check cash balance
+                        const currentCashStr = localStorage.getItem('cash_balance') || '0';
+                        let currentCash = parseFloat(currentCashStr);
+
+                        const tradeAmount = 10; // Auto-invest up to $10 target
+
+                        // Calculate actual shares and cost first
+                        const sharesToBuy = Math.floor(tradeAmount / Math.max(1, randomFeature.current_price));
+                        const actualCost = sharesToBuy * randomFeature.current_price;
+
+                        if (sharesToBuy > 0 && currentCash >= actualCost) {
+                            // Deduct exact cash ONCE
+                            currentCash -= actualCost;
+                            localStorage.setItem('cash_balance', currentCash.toString());
+                            setCashBalance(currentCash);
+
+                            // Add to portfolio
+                            addToPortfolio({
+                                id: randomFeature.id,
+                                title: randomFeature.title,
+                                shares: sharesToBuy,
+                                avgPrice: randomFeature.current_price,
+                                type: 'long'
+                            });
+
+                            setPortfolio(getPortfolio());
+
+                            // Simulate random profit/loss for the stats
+                            const fakeProfit = (Math.random() * 5) - 1.5; // Random between -1.5 and 3.5
+
+                            setAutoTraderStats(prev => ({
+                                profit: prev.profit + fakeProfit,
+                                trades: prev.trades + 1
+                            }));
+
+                            // Optionally give XP
+                            const newLevel = addXP(5);
+                            setLevelData(newLevel);
+                        } else if (currentCash < tradeAmount) {
+                            // Not enough cash, turn off
+                            setAutoTraderActive(false);
+                        }
+                    }
+                } catch (error) {
+                    console.error("Auto-Trader Error:", error);
+                }
+            }, 5000); // Run every 5 seconds
+        }
+
+        return () => {
+            if (interval) clearInterval(interval);
+        };
+    }, [autoTraderActive]);
 
     const saveChallenges = (newChallenges) => {
         setChallenges(newChallenges);
@@ -394,6 +463,53 @@ const UserProfile = () => {
                                          </>
                                      )}
                                  </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* AI Auto-Trader */}
+                    <div className="mt-8">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <Bot className="w-5 h-5 text-indigo-500" />
+                            AI Auto-Trader
+                        </h3>
+                        <div className="bg-gray-900 rounded-xl p-6 text-white relative overflow-hidden border border-gray-800 shadow-xl">
+                            <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/black-scales.png')]"></div>
+
+                            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                                <div>
+                                    <h4 className="text-xl font-bold text-indigo-400 mb-1">Quantum Investment Bot</h4>
+                                    <p className="text-sm text-gray-400 max-w-md">
+                                        Activate the AI Auto-Trader to automatically scan the market and invest your cash in high-potential features. It buys $10.00 of random assets every 5 seconds.
+                                    </p>
+                                </div>
+
+                                <div className="flex flex-col items-center gap-3">
+                                    <button
+                                        onClick={() => setAutoTraderActive(!autoTraderActive)}
+                                        className={`px-8 py-3 rounded-lg font-bold text-lg shadow-lg transform transition-all active:scale-95 flex items-center gap-2 ${
+                                            autoTraderActive
+                                                ? 'bg-red-500 hover:bg-red-400 text-white shadow-red-500/30'
+                                                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30'
+                                        }`}
+                                    >
+                                        <Bot className={`w-5 h-5 ${autoTraderActive ? 'animate-pulse' : ''}`} />
+                                        {autoTraderActive ? 'HALT TRADING' : 'ACTIVATE AI'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="relative z-10 grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-gray-800">
+                                <div className="bg-gray-800 p-4 rounded-lg text-center">
+                                    <p className="text-gray-400 text-xs font-bold uppercase mb-1">Trades Executed</p>
+                                    <p className="text-2xl font-black text-white">{autoTraderStats.trades}</p>
+                                </div>
+                                <div className="bg-gray-800 p-4 rounded-lg text-center">
+                                    <p className="text-gray-400 text-xs font-bold uppercase mb-1">Est. Daily Profit</p>
+                                    <p className={`text-2xl font-black ${autoTraderStats.profit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                        ${autoTraderStats.profit.toFixed(2)}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
