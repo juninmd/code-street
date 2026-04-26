@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle, User, Activity, Brain, Building2 } from 'lucide-react';
+import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle, User, Activity, Brain, Building2, Crown } from 'lucide-react';
 import LiveTicker from './components/LiveTicker';
 import IPOAlert from './components/IPOAlert';
 
@@ -161,6 +161,19 @@ const Layout = () => {
                   Profile
                 </NavLink>
                 <NavLink
+                  to="/luxury"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive
+                        ? 'border-amber-500 text-amber-900'
+                        : 'border-transparent text-amber-600 hover:border-amber-300 hover:text-amber-800'
+                    }`
+                  }
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Luxury
+                </NavLink>
+                <NavLink
                   to="/foundry"
                   className={({ isActive }) =>
                     `inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
@@ -293,6 +306,17 @@ const Layout = () => {
           >
             <Map className="w-6 h-6" />
             <span className="text-xs font-medium">Futures</span>
+          </NavLink>
+          <NavLink
+            to="/luxury"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center space-y-1 ${
+                isActive ? 'text-amber-600' : 'text-gray-500 hover:text-amber-700'
+              }`
+            }
+          >
+            <Crown className="w-6 h-6" />
+            <span className="text-xs font-medium">Luxury</span>
           </NavLink>
           <NavLink
             to="/foundry"

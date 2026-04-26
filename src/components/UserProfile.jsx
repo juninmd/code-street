@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Shield, TrendingUp, Wallet, Star, Gift, Zap, Share2, Link as LinkIcon, Users, Target, CheckCircle, Bot } from 'lucide-react';
+import { DollarSign, Shield, TrendingUp, Wallet, Star, Gift, Zap, Share2, Link as LinkIcon, Users, Target, CheckCircle, Bot, Crown, Watch, Home, Plane } from 'lucide-react';
 import { getPortfolio, addToPortfolio } from '../utils/portfolio';
 import { triggerHaptic } from '../utils/haptics';
 import { addXP, getLevelData } from '../utils/leveling';
@@ -20,6 +20,8 @@ const UserProfile = () => {
     const [autoTraderActive, setAutoTraderActive] = useState(false);
     const [autoTraderStats, setAutoTraderStats] = useState({ profit: 0, trades: 0 });
 
+    const [luxuryItems, setLuxuryItems] = useState([]);
+
     // Weekly Challenges State
     const [challenges, setChallenges] = useState([
         { id: 'c1', title: 'Vote on 3 features', reward: 5, progress: 0, goal: 3, claimed: false },
@@ -32,7 +34,22 @@ const UserProfile = () => {
         if (savedChallenges) {
             setChallenges(JSON.parse(savedChallenges));
         }
+
+        // Load luxury items
+        const ownedItems = JSON.parse(localStorage.getItem('luxury_assets') || '[]');
+        setLuxuryItems(ownedItems);
     }, []);
+
+    const getVIPStatus = () => {
+        if (netWorth >= 10000000) return { name: 'Black Card (Trillionaire)', color: 'from-gray-900 to-black', border: 'border-gray-700', text: 'text-gray-300', icon: <Crown className="w-5 h-5 text-gray-400" /> };
+        if (netWorth >= 1500000) return { name: 'Diamond Tier', color: 'from-blue-600 to-blue-900', border: 'border-blue-400', text: 'text-blue-200', icon: <Crown className="w-5 h-5 text-blue-300" /> };
+        if (netWorth >= 250000) return { name: 'Platinum Tier', color: 'from-purple-600 to-purple-900', border: 'border-purple-400', text: 'text-purple-200', icon: <Crown className="w-5 h-5 text-purple-300" /> };
+        if (netWorth >= 50000) return { name: 'Gold Tier', color: 'from-yellow-600 to-yellow-900', border: 'border-yellow-400', text: 'text-yellow-200', icon: <Crown className="w-5 h-5 text-yellow-300" /> };
+        if (netWorth >= 10000) return { name: 'Silver Tier', color: 'from-gray-400 to-gray-600', border: 'border-gray-300', text: 'text-gray-100', icon: <Star className="w-5 h-5 text-gray-200" /> };
+        return { name: 'Standard Member', color: 'from-slate-700 to-slate-800', border: 'border-slate-600', text: 'text-slate-300', icon: <Shield className="w-5 h-5 text-slate-400" /> };
+    };
+
+    const vip = getVIPStatus();
 
     useEffect(() => {
         let interval;
@@ -343,13 +360,21 @@ const UserProfile = () => {
     return (
         <div className="max-w-4xl mx-auto p-4 space-y-6 animate-fade-in-up">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="bg-emerald-600 h-32 relative">
-                    <div className="absolute -bottom-12 left-8">
+                <div className="bg-emerald-600 h-32 relative overflow-hidden">
+                    {/* VIP Background Layer */}
+                    <div className={`absolute inset-0 bg-gradient-to-r opacity-90 ${vip.color}`}></div>
+                    <div className="absolute -bottom-12 left-8 z-10">
                         <div className="w-24 h-24 bg-white rounded-full p-1 border-4 border-white shadow-lg">
                             <div className="w-full h-full bg-gray-100 rounded-full flex items-center justify-center text-3xl">
                                 🧑‍💻
                             </div>
                         </div>
+                    </div>
+                    {/* VIP Label */}
+                    <div className="absolute top-4 right-4 z-10">
+                        <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full font-bold uppercase tracking-widest shadow-lg border ${vip.border} ${vip.text} bg-black/40 backdrop-blur-sm`}>
+                            {vip.icon} {vip.name}
+                        </span>
                     </div>
                 </div>
                 <div className="pt-16 px-8 pb-8">

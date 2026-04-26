@@ -8,7 +8,7 @@ def run():
         print("Navigating to home...")
         try:
             page.goto("http://localhost:5173", timeout=30000)
-            page.wait_for_load_state("networkidle")
+            page.wait_for_timeout(5000)
         except Exception as e:
             print(f"Navigation failed: {e}")
             browser.close()
