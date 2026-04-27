@@ -204,7 +204,48 @@ Do not include any other text besides these two assets.
     }
 }
 
-module.exports = { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets };
+async function generateAgencyProposal(industry, problem) {
+    if (!process.env.GEMINI_API_KEY || !GoogleGenAI) {
+        return null;
+    }
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const prompt = `
+You are an elite, high-ticket AI Agency consultant. A user wants to pitch a solution to a real-world client.
+Industry: ${industry}
+Client's Problem: ${problem}
+
+Generate a professional, high-converting service proposal.
+Return a JSON object with the following fields:
+- "title": A professional title for the proposal (e.g., "AI-Powered Automation Implementation").
+- "executive_summary": A persuasive paragraph explaining how the solution solves their specific problem and generates ROI.
+- "proposed_solution": 3 to 4 bullet points outlining the technical/strategic solution.
+- "timeline_weeks": Estimated time to deliver (integer).
+- "price_quote": A high-ticket price in USD (integer, e.g., 5000, 15000). Ensure the price matches the value provided.
+- "marketing_pitch": A short, punchy sentence to use in the email subject or opening line to hook them.
+
+Return ONLY valid JSON.
+`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: prompt,
+            config: {
+                temperature: 0.8,
+                responseMimeType: "application/json",
+            }
+        });
+
+        const text = response.text().trim();
+        return JSON.parse(text);
+    } catch (error) {
+        console.error("Gemini API Error (generateAgencyProposal):", error);
+        return null;
+    }
+}
+
+module.exports = { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets, generateAgencyProposal };
 
 async function generateMidasHype(featureTitle, featureTicker) {
     if (!process.env.GEMINI_API_KEY || !GoogleGenAI) {

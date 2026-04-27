@@ -199,6 +199,19 @@ const Layout = () => {
                   <Building2 className="w-4 h-4 mr-2" />
                   B2B SaaS
                 </NavLink>
+                <NavLink
+                  to="/agency"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive
+                        ? 'border-indigo-500 text-indigo-900'
+                        : 'border-transparent text-indigo-600 hover:border-indigo-300 hover:text-indigo-800'
+                    }`
+                  }
+                >
+                  <Briefcase className="w-4 h-4 mr-2" />
+                  AI Agency
+                </NavLink>
               </div>
             </div>
           </div>
@@ -339,6 +352,17 @@ const Layout = () => {
           >
             <Building2 className="w-6 h-6" />
             <span className="text-xs font-medium">SaaS</span>
+          </NavLink>
+          <NavLink
+            to="/agency"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center space-y-1 ${
+                isActive ? 'text-indigo-600' : 'text-gray-500 hover:text-indigo-700'
+              }`
+            }
+          >
+            <Briefcase className="w-6 h-6" />
+            <span className="text-xs font-medium">Agency</span>
           </NavLink>
         </div>
       </nav>
