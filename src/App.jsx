@@ -14,6 +14,7 @@ import NewsTicker from './components/NewsTicker';
 import UserProfile from './components/UserProfile';
 import Foundry from './pages/Foundry';
 import Pricing from './pages/Pricing';
+import LuxuryStore from './pages/LuxuryStore';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
         <Route path="profile" element={<UserProfile />} />
         <Route path="foundry" element={<Foundry />} />
         <Route path="pricing" element={<Pricing />} />
+        <Route path="luxury" element={<LuxuryStore />} />
       </Route>
     </Routes>
     </>
