@@ -1,5 +1,5 @@
 const express = require('express');
-const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets } = require('./gemini');
+const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets, generateAgencyProposal } = require('./gemini');
 
 const cors = require('cors');
 const db = require('./db');
@@ -1237,6 +1237,39 @@ app.post('/api/market/midas', async (req, res) => {
     } catch (err) {
         console.error("Midas Engine Error:", err);
         res.status(500).json({ error: err.message });
+    }
+});
+
+// AI Agency Tycoon Proposal Generator
+app.post('/api/agency/proposal', async (req, res) => {
+    const { industry, problem } = req.body;
+    if (!industry || !problem) {
+        return res.status(400).json({ error: "Industry and problem are required" });
+    }
+
+    try {
+        let proposal = await generateAgencyProposal(industry, problem);
+
+        if (!proposal) {
+             // Fallback
+             proposal = {
+                 title: `AI Transformation for ${industry}`,
+                 executive_summary: `We propose a custom automation solution to address your problem: "${problem}". This will drastically reduce costs and increase output.`,
+                 proposed_solution: [
+                     "Analyze current manual workflows.",
+                     "Develop custom integration middleware.",
+                     "Deploy AI models for predictive automation."
+                 ],
+                 timeline_weeks: 4,
+                 price_quote: 10000,
+                 marketing_pitch: `Stop losing money on ${problem} - automate it today.`
+             };
+        }
+
+        res.json({ proposal });
+    } catch (err) {
+        console.error("Agency Proposal Error:", err);
+        res.status(500).json({ error: "Failed to generate proposal" });
     }
 });
 
