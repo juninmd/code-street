@@ -245,7 +245,49 @@ Return ONLY valid JSON.
     }
 }
 
-module.exports = { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets, generateAgencyProposal };
+
+async function generateVCPitch(ideaTitle, ideaDescription) {
+    if (!process.env.GEMINI_API_KEY || !GoogleGenAI) {
+        return null;
+    }
+
+    try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const prompt = `
+You are simulating a panel of three ruthless, elite Venture Capitalist "Sharks" evaluating a startup pitch.
+The user is pitching the following SaaS idea:
+
+Title: ${ideaTitle}
+Description: ${ideaDescription}
+
+Evaluate the pitch. Decide if it's worth investing in.
+Return a JSON object with the following fields:
+- "sharks_feedback": An array of 3 short, punchy quotes, one from each shark (e.g., "Mr. Wonderful: 'It's a cockroach. I'm out.'", "Cuban: 'I see the vision. I'll give you $50k.'").
+- "is_funded": A boolean (true or false) indicating if ANY shark decided to invest. Make it somewhat challenging (e.g., 40% chance of success based on idea quality).
+- "investment_amount": If funded, an integer amount between 5000 and 50000. If not funded, 0.
+- "reasoning": A brief 1-sentence summary of why they made their decision.
+
+Return ONLY valid JSON.
+`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-1.5-flash',
+            contents: prompt,
+            config: {
+                temperature: 0.9,
+                responseMimeType: "application/json",
+            }
+        });
+
+        const text = response.text().trim();
+        return JSON.parse(text);
+    } catch (error) {
+        console.error("Gemini API Error (generateVCPitch):", error);
+        return null;
+    }
+}
+
+module.exports = { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets, generateAgencyProposal, generateVCPitch };
 
 async function generateMidasHype(featureTitle, featureTicker) {
     if (!process.env.GEMINI_API_KEY || !GoogleGenAI) {

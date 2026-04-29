@@ -1,5 +1,5 @@
 const express = require('express');
-const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets, generateAgencyProposal } = require('./gemini');
+const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets, generateAgencyProposal, generateVCPitch } = require('./gemini');
 
 const cors = require('cors');
 const db = require('./db');
@@ -982,6 +982,27 @@ app.post('/api/market/simulate', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+
+// Foundry VC Pitch API
+app.post('/api/foundry/pitch', async (req, res) => {
+    const { title, description } = req.body;
+    if (!title || !description) {
+        return res.status(400).json({ error: 'Title and description are required' });
+    }
+
+    try {
+        const result = await generateVCPitch(title, description);
+        if (!result) {
+            return res.status(503).json({ error: 'AI Pitch evaluation failed or key missing.' });
+        }
+        res.json(result);
+    } catch (error) {
+        console.error("Error generating VC pitch:", error);
+        res.status(500).json({ error: 'Internal server error generating pitch' });
+    }
+});
+
 
 // Foundry Generate Idea Route
 app.post('/api/foundry/generate', async (req, res) => {
