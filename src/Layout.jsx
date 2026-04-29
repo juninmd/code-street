@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle, User, Activity, Brain, Building2, Crown } from 'lucide-react';
+import { Mic, MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle, User, Activity, Brain, Building2, Crown } from 'lucide-react';
 import LiveTicker from './components/LiveTicker';
 import IPOAlert from './components/IPOAlert';
 
@@ -212,6 +212,19 @@ const Layout = () => {
                   <Briefcase className="w-4 h-4 mr-2" />
                   AI Agency
                 </NavLink>
+                <NavLink
+                  to="/pitch"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive
+                        ? 'border-pink-500 text-pink-900'
+                        : 'border-transparent text-pink-600 hover:border-pink-300 hover:text-pink-800'
+                    }`
+                  }
+                >
+                  <Mic className="w-4 h-4 mr-2" />
+                  Shark Pitch
+                </NavLink>
               </div>
             </div>
           </div>
@@ -363,6 +376,17 @@ const Layout = () => {
           >
             <Briefcase className="w-6 h-6" />
             <span className="text-xs font-medium">Agency</span>
+          </NavLink>
+          <NavLink
+            to="/pitch"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center space-y-1 ${
+                isActive ? 'text-pink-600' : 'text-gray-500 hover:text-pink-700'
+              }`
+            }
+          >
+            <Mic className="w-6 h-6" />
+            <span className="text-xs font-medium">Pitch</span>
           </NavLink>
         </div>
       </nav>
