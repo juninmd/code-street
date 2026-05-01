@@ -17,6 +17,7 @@ import Pricing from './pages/Pricing';
 import LuxuryStore from './pages/LuxuryStore';
 import Agency from './pages/Agency';
 import VCPitch from './pages/VCPitch';
+import ICO from './pages/ICO';
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
         <Route path="luxury" element={<LuxuryStore />} />
         <Route path="agency" element={<Agency />} />
         <Route path="pitch" element={<VCPitch />} />
+        <Route path="ico" element={<ICO />} />
       </Route>
     </Routes>
     </>
