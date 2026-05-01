@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { Mic, MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle, User, Activity, Brain, Building2, Crown } from 'lucide-react';
+import { Mic, MessageSquare, Map, PartyPopper, PlusCircle, Briefcase, Download, X, PieChart, AlertCircle, User, Activity, Brain, Building2, Crown, Rocket } from 'lucide-react';
 import LiveTicker from './components/LiveTicker';
 import IPOAlert from './components/IPOAlert';
 
@@ -225,6 +225,17 @@ const Layout = () => {
                   <Mic className="w-4 h-4 mr-2" />
                   Shark Pitch
                 </NavLink>
+                <NavLink
+                  to="/ico"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive ? 'border-emerald-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`
+                  }
+                >
+                  <Rocket className="w-4 h-4 mr-1" />
+                  ICO
+                </NavLink>
               </div>
             </div>
           </div>
@@ -387,6 +398,17 @@ const Layout = () => {
           >
             <Mic className="w-6 h-6" />
             <span className="text-xs font-medium">Pitch</span>
+          </NavLink>
+          <NavLink
+            to="/ico"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center space-y-1 min-w-[72px] ${
+                isActive ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'
+              }`
+            }
+          >
+            <Rocket className="w-6 h-6" />
+            <span className="text-xs font-medium">ICO</span>
           </NavLink>
         </div>
       </nav>
