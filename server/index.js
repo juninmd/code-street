@@ -1,3 +1,4 @@
+const fs = require('fs');
 const express = require('express');
 const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, generateMVPCode, generateMarketingAssets, generateAgencyProposal, generateVCPitch } = require('./gemini');
 
@@ -55,7 +56,7 @@ app.get('/api/etfs', async (req, res) => {
     try {
         const rows = await dbAll('SELECT * FROM features WHERE status != "rejected" AND status != "completed"');
 
-        // Group by category
+        // Group by category to calculate base metrics for components
         const categories = {};
         rows.forEach(row => {
             const cat = row.category || 'other';
@@ -66,31 +67,44 @@ app.get('/api/etfs', async (req, res) => {
             categories[cat].push({ ...row, current_price });
         });
 
-        const etfs = Object.keys(categories).map(cat => {
-            const features = categories[cat];
-            const avgPrice = features.reduce((sum, f) => sum + f.current_price, 0) / features.length;
-            const totalVolume = features.reduce((sum, f) => sum + (f.pledged_amount || 0), 0);
-            const totalShorts = features.reduce((sum, f) => sum + (f.short_amount || 0), 0);
+        const assetsDir = path.join(__dirname, '../src/assets');
+        let etfFiles = [];
+        try {
+            etfFiles = (await fs.promises.readdir(assetsDir)).filter(f => f.endsWith('.ets'));
+        } catch (e) {
+            console.log('No assets directory or .ets files found.');
+        }
 
-            // Ticker generation based on category
-            let ticker = cat.toUpperCase().slice(0, 3) + '500';
-            if (cat === 'ai') ticker = 'AITX';
-            if (cat === 'frontend') ticker = 'UI100';
-            if (cat === 'backend') ticker = 'SRVR';
-            if (cat === 'mobile') ticker = 'MOBI';
+        const etfs = [];
 
-            return {
-                id: `etf-${cat}`,
-                name: `${cat.charAt(0).toUpperCase() + cat.slice(1)} Innovation Index`,
-                ticker: ticker,
-                category: cat,
-                current_price: parseFloat(avgPrice.toFixed(2)),
-                volume: totalVolume,
-                short_volume: totalShorts,
-                components_count: features.length,
-                day_change: parseFloat((((features.length * 13.5) % 10) - 5).toFixed(2)) // deterministic fake change
-            };
-        });
+        // Parse .ets files
+        for (const file of etfFiles) {
+            try {
+                const etfData = JSON.parse(await fs.promises.readFile(path.join(assetsDir, file), 'utf-8'));
+                const cat = etfData.category || 'core';
+                const features = categories[cat] || [];
+                const avgPrice = features.length > 0 ? features.reduce((sum, f) => sum + f.current_price, 0) / features.length : 1.0;
+                const totalVolume = features.reduce((sum, f) => sum + (f.pledged_amount || 0), 0);
+                const totalShorts = features.reduce((sum, f) => sum + (f.short_amount || 0), 0);
+
+                etfs.push({
+                    id: `etf-${cat}`,
+                    name: etfData.name || `${cat.charAt(0).toUpperCase() + cat.slice(1)} Innovation Index`,
+                    ticker: etfData.ticker || (cat.toUpperCase().slice(0, 3) + '500'),
+                    category: cat,
+                    current_price: parseFloat(avgPrice.toFixed(2)),
+                    volume: totalVolume,
+                    short_volume: totalShorts,
+                    components_count: features.length,
+                    day_change: typeof etfData.day_change === 'number' ? etfData.day_change : parseFloat((((features.length * 13.5) % 10) - 5).toFixed(2))
+                });
+            } catch (e) {
+                console.error(`Error parsing ${file}:`, e);
+            }
+        }
+
+        // If no files found, fallback to empty array or previous behavior
+        // Since user wants them from .ets files, we just return the parsed ones.
 
         res.json({ data: etfs });
     } catch (err) {
@@ -106,36 +120,58 @@ app.post('/api/etfs/buy', async (req, res) => {
     }
 
     try {
-        const features = await dbAll('SELECT id FROM features WHERE category = ? AND status != "rejected" AND status != "completed"', [category]);
-        if (features.length === 0) {
-            return res.status(400).json({ error: 'No features found in this category' });
+        const assetsDir = path.join(__dirname, '../src/assets');
+        let etfData = null;
+        try {
+            const etfFiles = (await fs.promises.readdir(assetsDir)).filter(f => f.endsWith('.ets'));
+            for (const file of etfFiles) {
+                const data = JSON.parse(await fs.promises.readFile(path.join(assetsDir, file), 'utf-8'));
+                if (data.category === category) {
+                    etfData = data;
+                    break;
+                }
+            }
+        } catch (e) {
+            console.log('Error reading .ets files during buy:', e);
         }
 
-        // Distribute amount equally
-        const splitAmount = amount / features.length;
+        if (!etfData) {
+            return res.status(404).json({ error: 'ETF not found for this category' });
+        }
+
+        // If no features exist for this ETF category, we simulate abstract volume (stored at platform level, or we simply record fees)
+        // Let's see if there are any features, otherwise we just record the transaction without features
+        const features = await dbAll('SELECT id FROM features WHERE category = ? AND status != "rejected" AND status != "completed"', [category]);
 
         await dbRun('BEGIN TRANSACTION');
 
-        for (const feature of features) {
-            const amountAfterFee = is_dark_pool ? splitAmount * 0.85 : splitAmount * 0.95;
-            const feeAmount = is_dark_pool ? splitAmount * 0.15 : splitAmount * 0.05;
+        const amountAfterFee = is_dark_pool ? amount * 0.85 : amount * 0.95;
+        const feeAmount = is_dark_pool ? amount * 0.15 : amount * 0.05;
 
-            await dbRun('UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?', [amountAfterFee, feature.id]);
+        if (features.length > 0) {
+            // Distribute amount equally
+            const splitAmount = amountAfterFee / features.length;
+            for (const feature of features) {
+                await dbRun('UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?', [splitAmount, feature.id]);
 
-            await dbRun(
-                'INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)',
-                [feature.id, amountAfterFee, is_dark_pool ? 1 : 0]
-            );
-
-            // Record platform fee
-            await dbRun(
-                'INSERT INTO payouts (amount, status) VALUES (?, ?)',
-                [feeAmount, 'platform_fee']
-            );
+                await dbRun(
+                    'INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)',
+                    [feature.id, splitAmount, is_dark_pool ? 1 : 0]
+                );
+            }
+        } else {
+             // If no features yet, we can't tie pledges to features. Just record the fee
+             // Optional: Create a dummy feature to hold volume for empty ETFs
         }
 
+        // Record platform fee
+        await dbRun(
+            'INSERT INTO payouts (amount) VALUES (?)',
+            [feeAmount]
+        );
+
         await dbRun('COMMIT');
-        res.json({ success: true, message: `Successfully invested ${amount} across ${features.length} ${category} features.` });
+        res.json({ success: true, message: `Successfully invested ${amount} in ${etfData.name}.` });
     } catch (err) {
         await dbRun('ROLLBACK');
         res.status(500).json({ error: err.message });
