@@ -236,6 +236,17 @@ const Layout = () => {
                   <Rocket className="w-4 h-4 mr-1" />
                   ICO
                 </NavLink>
+                <NavLink
+                  to="/crash"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive ? 'border-red-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`
+                  }
+                >
+                  <Activity className="w-4 h-4 mr-1" />
+                  Crash
+                </NavLink>
               </div>
             </div>
           </div>
@@ -409,6 +420,17 @@ const Layout = () => {
           >
             <Rocket className="w-6 h-6" />
             <span className="text-xs font-medium">ICO</span>
+          </NavLink>
+          <NavLink
+            to="/crash"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center space-y-1 min-w-[72px] ${
+                isActive ? 'text-red-600' : 'text-gray-500 hover:text-gray-700'
+              }`
+            }
+          >
+            <Activity className="w-6 h-6" />
+            <span className="text-xs font-medium">Crash</span>
           </NavLink>
         </div>
       </nav>
