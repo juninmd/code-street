@@ -19,6 +19,7 @@ import Agency from './pages/Agency';
 import VCPitch from './pages/VCPitch';
 import ICO from './pages/ICO';
 import CrashGame from './pages/CrashGame';
+import Empire from './pages/Empire';
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
         <Route path="pitch" element={<VCPitch />} />
         <Route path="ico" element={<ICO />} />
         <Route path="crash" element={<CrashGame />} />
+        <Route path="empire" element={<Empire />} />
       </Route>
     </Routes>
     </>
