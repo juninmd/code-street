@@ -247,6 +247,17 @@ const Layout = () => {
                   <Activity className="w-4 h-4 mr-1" />
                   Crash
                 </NavLink>
+                <NavLink
+                  to="/empire"
+                  className={({ isActive }) =>
+                    `inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                      isActive ? 'border-purple-500 text-purple-900' : 'border-transparent text-purple-600 hover:border-purple-300 hover:text-purple-800'
+                    }`
+                  }
+                >
+                  <Building2 className="w-4 h-4 mr-1" />
+                  Empire
+                </NavLink>
               </div>
             </div>
           </div>
@@ -431,6 +442,17 @@ const Layout = () => {
           >
             <Activity className="w-6 h-6" />
             <span className="text-xs font-medium">Crash</span>
+          </NavLink>
+          <NavLink
+            to="/empire"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center space-y-1 min-w-[72px] ${
+                isActive ? 'text-purple-600' : 'text-gray-500 hover:text-purple-700'
+              }`
+            }
+          >
+            <Building2 className="w-6 h-6" />
+            <span className="text-xs font-medium">Empire</span>
           </NavLink>
         </div>
       </nav>
