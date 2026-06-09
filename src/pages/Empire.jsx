@@ -1,95 +1,115 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Crown, Server, Users, Bot, Rocket, Briefcase, TrendingUp, DollarSign, Activity } from 'lucide-react';
 import { triggerHaptic } from '../utils/haptics';
+import { addXP } from '../utils/leveling';
+import {
+    Building2, Server, Cpu, Database, Cloud,
+    Wifi, Globe, Zap, Shield, Rocket, DollarSign,
+    TrendingUp, Activity, Users
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
 
-const ASSETS = [
-    { id: 'cloud', name: 'Cloud Server Node', icon: Server, baseCost: 50, rate: 1, desc: 'Generates $1/sec.' },
-    { id: 'dev', name: 'Junior Dev Intern', icon: Users, baseCost: 250, rate: 6, desc: 'Generates $6/sec.' },
-    { id: 'ai', name: 'AI Code Assistant', icon: Bot, baseCost: 1500, rate: 45, desc: 'Generates $45/sec.' },
-    { id: 'marketing', name: 'Viral Marketing Campaign', icon: Rocket, baseCost: 10000, rate: 350, desc: 'Generates $350/sec.' },
-    { id: 'startup', name: 'Acquired Startup', icon: Briefcase, baseCost: 100000, rate: 4000, desc: 'Generates $4000/sec.' }
+const EMPIRE_ASSETS = [
+    { id: 'jr_dev', name: 'Junior Dev', baseCost: 10, income: 1, icon: Users, description: 'Writes bugs, but also code.' },
+    { id: 'cloud_instance', name: 'Cloud Instance', baseCost: 100, income: 10, icon: Cloud, description: 'Basic compute power.' },
+    { id: 'ai_generator', name: 'AI Code Generator', baseCost: 500, income: 50, icon: Cpu, description: 'Writes code while you sleep.' },
+    { id: 'data_center', name: 'Data Center', baseCost: 2000, income: 250, icon: Database, description: 'Massive infrastructure.' },
+    { id: 'quantum_server', name: 'Quantum Server', baseCost: 10000, income: 1500, icon: Server, description: 'Bends reality to compute.' },
+    { id: 'tech_hub', name: 'Global Tech Hub', baseCost: 50000, income: 8000, icon: Globe, description: 'A network of engineers.' },
+    { id: 'skynet', name: 'Sentient AI', baseCost: 500000, income: 100000, icon: Rocket, description: 'It controls everything.' },
 ];
 
+const COST_MULTIPLIER = 1.15;
+
 const Empire = () => {
-    const [cash, setCash] = useState(parseFloat(localStorage.getItem('cash_balance') || '0'));
-    const [inventory, setInventory] = useState(() => {
-        const defaultInventory = ASSETS.reduce((acc, a) => ({ ...acc, [a.id]: 0 }), {});
-        const saved = localStorage.getItem('empire_inventory');
-        return saved ? { ...defaultInventory, ...JSON.parse(saved) } : defaultInventory;
+    const [cashBalance, setCashBalance] = useState(() => parseFloat(localStorage.getItem('cash_balance') || '0'));
+    const [assets, setAssets] = useState(() => {
+        const saved = localStorage.getItem('empire_assets');
+        return saved ? JSON.parse(saved) : {};
     });
+    const [totalIncomePerSecond, setTotalIncomePerSecond] = useState(0);
 
-    // Calculate total MRR (per second rate)
-    const mrr = ASSETS.reduce((total, asset) => total + (inventory[asset.id] * asset.rate), 0);
+    const cashRef = useRef(cashBalance);
+    cashRef.current = cashBalance;
 
-    const cashRef = useRef(cash);
-    cashRef.current = cash;
-
-    const mrrRef = useRef(mrr);
-    mrrRef.current = mrr;
+    const incomeRef = useRef(totalIncomePerSecond);
+    incomeRef.current = totalIncomePerSecond;
 
     useEffect(() => {
-        // Compute "offline" progress since last visit
+        const calculateIncome = () => {
+            let income = 0;
+            for (const asset of EMPIRE_ASSETS) {
+                const count = assets[asset.id] || 0;
+                income += count * asset.income;
+            }
+            return income;
+        };
+
+        const currentIncome = calculateIncome();
+        setTotalIncomePerSecond(currentIncome);
+
         const lastVisit = localStorage.getItem('empire_last_visit');
         const now = Date.now();
-        if (lastVisit && mrr > 0) {
+        if (lastVisit && currentIncome > 0) {
             const timeDiffSeconds = Math.floor((now - parseInt(lastVisit, 10)) / 1000);
             if (timeDiffSeconds > 0) {
-                const offlineEarnings = timeDiffSeconds * mrr;
-                const newCash = cash + offlineEarnings;
-                setCash(newCash);
-                localStorage.setItem('cash_balance', newCash.toFixed(2));
-                window.dispatchEvent(new Event('storage'));
+                const offlineEarnings = timeDiffSeconds * currentIncome;
+                setCashBalance(prev => {
+                    const newBalance = prev + offlineEarnings;
+                    localStorage.setItem('cash_balance', newBalance.toFixed(2));
+                    return newBalance;
+                });
             }
         }
 
-        const interval = setInterval(() => {
-            if (mrrRef.current > 0) {
-                // Add income per second. Update state and localStorage.
-                const newCash = cashRef.current + mrrRef.current;
-                setCash(newCash);
-                localStorage.setItem('cash_balance', newCash.toFixed(2));
+        if (currentIncome > 0) {
+            const interval = setInterval(() => {
+                if (incomeRef.current > 0) {
+                    setCashBalance(prev => {
+                        const newBalance = prev + incomeRef.current;
+                        localStorage.setItem('cash_balance', newBalance.toFixed(2));
+                        return newBalance;
+                    });
+                }
+                localStorage.setItem('empire_last_visit', Date.now().toString());
+            }, 1000);
+            return () => {
+                clearInterval(interval);
+                localStorage.setItem('empire_last_visit', Date.now().toString());
+            };
+        }
+    }, [assets]);
 
-                // Dispatch event so other components (like header) update if needed
-                window.dispatchEvent(new Event('storage'));
-            }
-            // Update last visit time continuously while on the page
-            localStorage.setItem('empire_last_visit', Date.now().toString());
-        }, 1000);
-
-        return () => {
-            clearInterval(interval);
-            localStorage.setItem('empire_last_visit', Date.now().toString());
-        };
-    }, []);
-
-    const calculateCost = (assetId) => {
-        const count = inventory[assetId];
-        const asset = ASSETS.find(a => a.id === assetId);
-        // Cost scaling formula: baseCost * 1.15^count
-        return asset.baseCost * Math.pow(1.15, count);
+    const getCost = (assetId, baseCost) => {
+        const count = assets[assetId] || 0;
+        return Math.floor(baseCost * Math.pow(COST_MULTIPLIER, count));
     };
 
-    const buyAsset = (assetId) => {
-        const cost = calculateCost(assetId);
-        if (cash >= cost) {
+    const buyAsset = (assetId, baseCost) => {
+        const cost = getCost(assetId, baseCost);
+
+        if (cashBalance >= cost) {
             triggerHaptic('success');
-            const newCash = cash - cost;
-            setCash(newCash);
-            localStorage.setItem('cash_balance', newCash.toFixed(2));
 
-            const newInventory = { ...inventory, [assetId]: inventory[assetId] + 1 };
-            setInventory(newInventory);
-            localStorage.setItem('empire_inventory', JSON.stringify(newInventory));
+            const newBalance = cashBalance - cost;
+            setCashBalance(newBalance);
+            localStorage.setItem('cash_balance', newBalance.toFixed(2));
 
-            window.dispatchEvent(new Event('storage'));
+            const newCount = (assets[assetId] || 0) + 1;
 
-            if (newInventory[assetId] === 1 || newInventory[assetId] % 10 === 0) {
-                 confetti({
+            setAssets(prev => {
+                const newAssets = { ...prev, [assetId]: newCount };
+                localStorage.setItem('empire_assets', JSON.stringify(newAssets));
+                return newAssets;
+            });
+
+            addXP(10);
+
+            if (cost > 1000 || newCount === 1 || newCount % 10 === 0) {
+                confetti({
                     particleCount: 50,
                     spread: 60,
                     origin: { y: 0.8 },
-                    colors: ['#3B82F6', '#10B981']
+                    colors: ['#8B5CF6', '#10B981']
                 });
             }
         } else {
@@ -98,82 +118,108 @@ const Empire = () => {
     };
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-500 pb-12">
-            <div className="bg-gradient-to-br from-indigo-900 to-purple-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden border border-indigo-500/30">
+        <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
+            <div className="bg-gradient-to-r from-purple-900 to-indigo-900 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden border border-purple-800">
                 <div className="absolute top-0 right-0 p-8 opacity-10">
-                    <Crown className="w-64 h-64 text-indigo-300" />
+                    <Building2 className="w-48 h-48 text-purple-400" />
                 </div>
-                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-sm font-semibold mb-4">
-                            <TrendingUp className="w-4 h-4" />
-                            Passive Income
-                        </div>
-                        <h1 className="text-4xl md:text-6xl font-black mb-2 tracking-tight">
-                            SaaS <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Empire</span>
-                        </h1>
-                        <p className="text-lg text-indigo-200/80 max-w-xl">
-                            Build your tech conglomerate. Buy revenue-generating assets and watch your cash pile grow automatically, even while you trade.
-                        </p>
+                <div className="relative z-10">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 text-purple-300 text-sm font-semibold mb-4">
+                        <TrendingUp className="w-4 h-4" />
+                        SaaS Empire Builder
                     </div>
+                    <h1 className="text-4xl sm:text-5xl font-extrabold mb-4 tracking-tight">
+                        Passive <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">Income</span> Machine.
+                    </h1>
+                    <p className="text-lg text-purple-200 max-w-2xl mb-6">
+                        Buy digital assets to automatically generate simulated cash. Build your infrastructure, scale your operations, and become a Silicon Valley tycoon without lifting a finger.
+                    </p>
 
-                    <div className="bg-black/40 backdrop-blur-md rounded-2xl p-6 border border-white/10 flex flex-col items-end min-w-[250px]">
-                        <p className="text-sm font-semibold text-indigo-300 mb-1 flex items-center gap-2">
-                            <Activity className="w-4 h-4" /> Current MRR
-                        </p>
-                        <p className="text-4xl font-black text-emerald-400">
-                            +${mrr.toLocaleString()}<span className="text-lg text-emerald-400/60 font-bold">/sec</span>
-                        </p>
-                        <div className="w-full h-1 bg-white/10 rounded-full mt-4 overflow-hidden relative">
-                             {mrr > 0 && (
-                                 <div className="absolute top-0 bottom-0 left-0 bg-emerald-500 animate-[pulse_1s_linear_infinite]" style={{width: '100%'}}></div>
-                             )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+                        <div className="bg-black/40 backdrop-blur-sm rounded-xl p-6 border border-white/10 flex items-center gap-4">
+                            <div className="bg-emerald-500/20 p-3 rounded-lg">
+                                <DollarSign className="w-8 h-8 text-emerald-400" />
+                            </div>
+                            <div>
+                                <p className="text-purple-200 text-sm font-bold uppercase tracking-wider">Liquid Net Worth</p>
+                                <p className="text-3xl font-black text-white">${cashBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</p>
+                            </div>
+                        </div>
+
+                        <div className="bg-black/40 backdrop-blur-sm rounded-xl p-6 border border-white/10 flex items-center gap-4">
+                            <div className="bg-cyan-500/20 p-3 rounded-lg">
+                                <Activity className="w-8 h-8 text-cyan-400" />
+                            </div>
+                            <div>
+                                <p className="text-purple-200 text-sm font-bold uppercase tracking-wider">Idle Income Rate</p>
+                                <p className="text-3xl font-black text-cyan-400">+${totalIncomePerSecond.toLocaleString()}/sec</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {ASSETS.map((asset) => {
-                    const count = inventory[asset.id];
-                    const cost = calculateCost(asset.id);
-                    const canAfford = cash >= cost;
-                    const AssetIcon = asset.icon;
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8">
+                <h3 className="font-bold text-xl text-gray-900 mb-6 flex items-center gap-2">
+                    <Server className="w-6 h-6 text-indigo-600" />
+                    Infrastructure Store
+                </h3>
 
-                    return (
-                        <div key={asset.id} className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col transition-all hover:shadow-md">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className={`p-3 rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400`}>
-                                    <AssetIcon className="w-8 h-8" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {EMPIRE_ASSETS.map((asset) => {
+                        const count = assets[asset.id] || 0;
+                        const currentCost = getCost(asset.id, asset.baseCost);
+                        const canAfford = cashBalance >= currentCost;
+                        const Icon = asset.icon;
+
+                        return (
+                            <div key={asset.id} className="bg-gray-50 rounded-xl p-5 border border-gray-200 hover:border-indigo-300 transition-all group flex flex-col h-full">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-indigo-100 p-2.5 rounded-lg text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                            <Icon className="w-6 h-6" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-gray-900">{asset.name}</h4>
+                                            <p className="text-xs text-gray-500">{asset.description}</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-white px-3 py-1 rounded-full border border-gray-200 text-sm font-bold text-gray-700 shadow-sm">
+                                        x{count}
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <span className="text-3xl font-black text-gray-900 dark:text-white">{count}</span>
-                                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Owned</p>
+
+                                <div className="mt-auto pt-4 border-t border-gray-200">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="text-sm">
+                                            <span className="text-gray-500 font-medium">Yield:</span>
+                                            <span className="ml-1 font-bold text-emerald-600">+${asset.income}/s</span>
+                                        </div>
+                                        <div className="text-sm">
+                                            <span className="text-gray-500 font-medium">Cost:</span>
+                                            <span className={`ml-1 font-bold ${canAfford ? 'text-gray-900' : 'text-red-500'}`}>
+                                                ${currentCost.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => buyAsset(asset.id, asset.baseCost)}
+                                        disabled={!canAfford}
+                                        className={`w-full py-3 rounded-lg font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                                            canAfford
+                                                ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-md hover:shadow-lg active:scale-95'
+                                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        <Zap className="w-4 h-4" />
+                                        {canAfford ? 'Purchase Asset' : 'Insufficient Funds'}
+                                    </button>
                                 </div>
                             </div>
-
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{asset.name}</h3>
-                            <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mb-4 flex items-center gap-1">
-                                <DollarSign className="w-4 h-4" /> {asset.desc}
-                            </p>
-
-                            <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-700">
-                                <button
-                                    onClick={() => buyAsset(asset.id)}
-                                    disabled={!canAfford}
-                                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all ${
-                                        canAfford
-                                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 dark:shadow-none active:scale-95'
-                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
-                                    }`}
-                                >
-                                    <span>Buy 1</span>
-                                    <span>${cost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                                </button>
-                            </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
