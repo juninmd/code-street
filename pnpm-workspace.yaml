@@ -4,4 +4,5 @@ onlyBuiltDependencies:
 allowBuilds:
   sqlite3: true
   esbuild: true
+  unrs-resolver: true
   protobufjs: false
