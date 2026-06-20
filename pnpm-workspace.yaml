@@ -1,3 +1,7 @@
 onlyBuiltDependencies:
   - sqlite3
   - esbuild
+allowBuilds:
+  sqlite3: true
+  esbuild: true
+  protobufjs: false
