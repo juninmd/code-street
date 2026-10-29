@@ -12,16 +12,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/juninmd/surprise.git"
+    "url": "git+https://github.com/juninmd/code-street.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/juninmd/surprise/issues"
+    "url": "https://github.com/juninmd/code-street/issues"
   },
-  "homepage": "https://github.com/juninmd/surprise#readme",
+  "homepage": "https://github.com/juninmd/code-street#readme",
   "dependencies": {
     "@google/genai": "^1.48.0",
     "@stripe/stripe-js": "^9.2.0",
