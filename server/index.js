@@ -116,11 +116,12 @@ app.get('/api/etfs', async (req, res) => {
 });
 
 app.post('/api/etfs/buy', async (req, res) => {
-    const { category, amount, is_dark_pool } = req.body;
+    const { category, is_dark_pool } = req.body;
 
-    if (!category || !isPositiveAmount(amount)) {
+    if (!category || !isPositiveAmount(req.body.amount)) {
         return res.status(400).json({ error: 'Invalid ETF purchase request' });
     }
+    const amount = Number(req.body.amount);
 
     try {
         const assetsDir = path.join(__dirname, '../src/assets');
@@ -907,9 +908,9 @@ app.post('/api/features/:id/panic', async (req, res) => {
 
 // Quantum Trade Simulation
 app.post('/api/market/quantum-trade', async (req, res) => {
-    const { investment } = req.body;
+    const investment = Number(req.body.investment);
 
-    if (!investment || isNaN(investment) || investment <= 0) {
+    if (!Number.isFinite(investment) || investment <= 0) {
         res.status(400).json({ error: 'Valid investment amount is required' });
         return;
     }
