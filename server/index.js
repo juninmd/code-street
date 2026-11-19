@@ -51,6 +51,9 @@ const dbRun = (sql, params = []) => {
 };
 
 
+// Positive finite number check; rejects NaN, Infinity, booleans and non-numeric strings like "abc".
+const isPositiveAmount = (v) => typeof v !== 'boolean' && Number.isFinite(Number(v)) && Number(v) > 0;
+
 // --- ETF / Market Indexes ---
 app.get('/api/etfs', async (req, res) => {
     try {
@@ -114,11 +117,11 @@ app.get('/api/etfs', async (req, res) => {
 
 app.post('/api/etfs/buy', async (req, res) => {
     const { category, is_dark_pool } = req.body;
-    const amount = Number(req.body.amount);
 
-    if (!category || !Number.isFinite(amount) || amount <= 0) {
+    if (!category || !isPositiveAmount(req.body.amount)) {
         return res.status(400).json({ error: 'Invalid ETF purchase request' });
     }
+    const amount = Number(req.body.amount);
 
     try {
         const assetsDir = path.join(__dirname, '../src/assets');
@@ -174,7 +177,8 @@ app.post('/api/etfs/buy', async (req, res) => {
         await dbRun('COMMIT');
         res.json({ success: true, message: `Successfully invested ${amount} in ${etfData.name}.` });
     } catch (err) {
-        await dbRun('ROLLBACK');
+        // BEGIN may not have run yet (e.g. ETF lookup failed); don't let ROLLBACK mask the 500
+        await dbRun('ROLLBACK').catch((err) => console.error('ROLLBACK failed', err));
         res.status(500).json({ error: err.message });
     }
 });
@@ -291,7 +295,7 @@ app.post('/api/features/:id/short', async (req, res) => {
   const { id } = req.params;
   const { amount, is_dark_pool = false } = req.body;
 
-  if (!amount || isNaN(amount) || amount <= 0) {
+  if (!isPositiveAmount(amount)) {
       res.status(400).json({ error: 'Valid amount is required' });
       return;
   }
@@ -514,7 +518,7 @@ app.post('/api/features/:id/pledge', async (req, res) => {
   const { id } = req.params;
   const { amount, is_dark_pool } = req.body;
 
-  if (!amount || isNaN(amount) || amount <= 0) {
+  if (!isPositiveAmount(amount)) {
       res.status(400).json({ error: 'Valid amount is required' });
       return;
   }
@@ -523,16 +527,16 @@ app.post('/api/features/:id/pledge', async (req, res) => {
   const sqlPledge = 'INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)';
 
   try {
-    // 1. Record the pledge transaction
-    await dbRun(sqlPledge, [id, amount, is_dark_pool ? 1 : 0]);
-
-    // 2. Update the total amount
+    // 1. Update the total amount first so an unknown feature is a 404 (not an FK error)
     const { changes } = await dbRun(sqlFeature, [amount, id]);
 
     if (changes === 0) {
         res.status(404).json({ error: 'Feature not found' });
         return;
     }
+
+    // 2. Record the pledge transaction
+    await dbRun(sqlPledge, [id, amount, is_dark_pool ? 1 : 0]);
     res.json({ message: 'Pledged', changes });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -552,7 +556,7 @@ app.get('/api/admin/payouts', async (req, res) => {
 // Process a payout
 app.post('/api/admin/payout', async (req, res) => {
     const { amount } = req.body;
-    if (!amount || isNaN(amount) || amount <= 0) {
+    if (!isPositiveAmount(amount)) {
         res.status(400).json({ error: 'Valid amount is required' });
         return;
     }
