@@ -123,8 +123,6 @@ app.post('/api/etfs/buy', async (req, res) => {
     }
     const amount = Number(req.body.amount);
 
-    const amount = Number(req.body.amount);
-
     try {
         const assetsDir = path.join(__dirname, '../src/assets');
         let etfData = null;
