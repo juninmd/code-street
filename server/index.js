@@ -177,7 +177,7 @@ app.post('/api/etfs/buy', async (req, res) => {
         res.json({ success: true, message: `Successfully invested ${amount} in ${etfData.name}.` });
     } catch (err) {
         // BEGIN may not have run yet (e.g. ETF lookup failed); don't let ROLLBACK mask the 500
-        await dbRun('ROLLBACK').catch(() => {});
+        await dbRun('ROLLBACK').catch((err) => console.error('ROLLBACK failed', err));
         res.status(500).json({ error: err.message });
     }
 });
