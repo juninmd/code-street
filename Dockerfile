@@ -1,5 +1,5 @@
 # Build stage
-FROM node:25-slim AS builder
+FROM node:26-slim AS builder
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -8,7 +8,7 @@ COPY . .
 RUN pnpm run build
 
 # Final stage
-FROM node:25-slim
+FROM node:26-slim
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
