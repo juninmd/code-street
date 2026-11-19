@@ -121,6 +121,7 @@ app.post('/api/etfs/buy', async (req, res) => {
     if (!category || !isPositiveAmount(req.body.amount)) {
         return res.status(400).json({ error: 'Invalid ETF purchase request' });
     }
+    const amount = Number(req.body.amount);
 
     const amount = Number(req.body.amount);
 
