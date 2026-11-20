@@ -720,6 +720,13 @@ app.post('/api/options/buy', async (req, res) => {
     if (!feature_id || !type || !strike_price || !expiration_date || !premium_paid) {
         return res.status(400).json({ error: 'Missing required options parameters' });
     }
+    if (!['call', 'put'].includes(type) || !isPositiveAmount(strike_price) || !isPositiveAmount(premium_paid)) {
+        return res.status(400).json({ error: 'Invalid options parameters' });
+    }
+    const expiresAt = Date.parse(expiration_date);
+    if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
+        return res.status(400).json({ error: 'expiration_date must be a future date' });
+    }
 
     const sql = `
         INSERT INTO options_contracts (feature_id, type, strike_price, expiration_date, premium_paid, status)
@@ -727,7 +734,10 @@ app.post('/api/options/buy', async (req, res) => {
     `;
 
     try {
-        const { lastID } = await dbRun(sql, [feature_id, type, strike_price, expiration_date, premium_paid]);
+        if (!(await dbGet('SELECT id FROM features WHERE id = ?', [feature_id]))) {
+            return res.status(404).json({ error: 'Feature not found' });
+        }
+        const { lastID } = await dbRun(sql, [feature_id, type, Number(strike_price), new Date(expiresAt).toISOString(), Number(premium_paid)]);
         const contract = await dbGet('SELECT * FROM options_contracts WHERE id = ?', [lastID]);
         res.json({ message: 'Options contract purchased', data: contract });
     } catch (err) {
@@ -769,6 +779,10 @@ app.post('/api/options/exercise/:id', async (req, res) => {
         const contract = await dbGet('SELECT * FROM options_contracts WHERE id = ?', [id]);
         if (!contract) return res.status(404).json({ error: 'Contract not found' });
         if (contract.status !== 'active') return res.status(400).json({ error: 'Contract is not active' });
+        if (!(Date.parse(contract.expiration_date) > Date.now())) {
+            await dbRun("UPDATE options_contracts SET status = 'expired' WHERE id = ? AND status = 'active'", [id]);
+            return res.status(400).json({ error: 'Contract has expired' });
+        }
 
         // Get current price
         const featureRow = await dbGet('SELECT votes, pledged_amount FROM features WHERE id = ?', [contract.feature_id]);
