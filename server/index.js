@@ -252,13 +252,20 @@ app.get('/api/features', async (req, res) => {
 
 // Create a new feature
 app.post('/api/features', async (req, res) => {
-  const { title, description, category, initial_pledge, deadline, ticker } = req.body;
+  const { description, category, initial_pledge, deadline, ticker } = req.body;
+  const title = typeof req.body.title === 'string' ? req.body.title.trim() : '';
   if (!title) {
     res.status(400).json({ error: 'Title is required' });
     return;
   }
 
-  const pledge = (initial_pledge && !isNaN(initial_pledge)) ? parseFloat(initial_pledge) : 0;
+  // A negative IPO would list the feature in debt and record a negative pledge.
+  const noPledge = initial_pledge === undefined || initial_pledge === null || initial_pledge === '' || Number(initial_pledge) === 0;
+  if (!noPledge && !isPositiveAmount(initial_pledge)) {
+    res.status(400).json({ error: 'initial_pledge must be a positive amount' });
+    return;
+  }
+  const pledge = noPledge ? 0 : Number(initial_pledge);
 
   let finalTicker = ticker;
   if (!finalTicker) {
