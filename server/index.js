@@ -526,19 +526,27 @@ app.post('/api/features/:id/pledge', async (req, res) => {
   const sqlFeature = 'UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?';
   const sqlPledge = 'INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)';
 
+  let began = false;
   try {
+    // Total and pledge record change together, as in /short.
+    await dbRun('BEGIN TRANSACTION');
+    began = true;
     // 1. Update the total amount first so an unknown feature is a 404 (not an FK error)
     const { changes } = await dbRun(sqlFeature, [amount, id]);
 
     if (changes === 0) {
+        await dbRun('ROLLBACK');
         res.status(404).json({ error: 'Feature not found' });
         return;
     }
 
     // 2. Record the pledge transaction
     await dbRun(sqlPledge, [id, amount, is_dark_pool ? 1 : 0]);
+    await dbRun('COMMIT');
     res.json({ message: 'Pledged', changes });
   } catch (err) {
+    // Never roll back a transaction this request did not open.
+    if (began) await dbRun('ROLLBACK').catch(() => {});
     res.status(400).json({ error: err.message });
   }
 });
