@@ -14,6 +14,8 @@ import { addToPortfolio } from '../utils/portfolio';
 import { triggerHaptic } from '../utils/haptics';
 import { addXP } from '../utils/leveling';
 
+const ORDER_FAILED = '⚠️ Order not filled. Try again.';
+
 const FeatureDetail = () => {
     const handleXP = (amount) => {
         const { leveledUp, newLevel } = addXP(amount);
@@ -162,11 +164,15 @@ const FeatureDetail = () => {
               setFeature(prev => ({ ...prev, short_amount: (prev.short_amount || 0) + parseFloat(pledgeAmount) }));
 
               setPledgeAmount('');
-              setShowPaymentModal(false);
+          } else {
+              showToast(ORDER_FAILED);
           }
       } catch (err) {
           console.error(err);
+          showToast(ORDER_FAILED);
       } finally {
+          // The modal already shows "Payment Successful" with no close button: always dismiss it
+          setShowPaymentModal(false);
           setIsPledging(false);
       }
   };
@@ -205,11 +211,14 @@ const FeatureDetail = () => {
               setHistory(prev => [...prev, newPledge]);
 
               setPledgeAmount('');
-              setShowPaymentModal(false);
+          } else {
+              showToast(ORDER_FAILED);
           }
       } catch (err) {
           console.error(err);
+          showToast(ORDER_FAILED);
       } finally {
+          setShowPaymentModal(false);
           setIsPledging(false);
       }
   };
