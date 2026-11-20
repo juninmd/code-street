@@ -137,10 +137,13 @@ const FeatureDetail = () => {
               body: JSON.stringify({ content: newComment })
           });
           const json = await res.json();
-          setComments([...comments, json.data]);
+          // A rejected comment has no data: appending undefined would crash the comment list
+          if (!res.ok || !json?.data) throw new Error(json?.error || `HTTP ${res.status}`);
+          setComments(prev => [...prev, json.data]);
           setNewComment('');
       } catch(err) {
           console.error(err);
+          showToast('⚠️ Comment not posted. Try again.');
       }
   }
 
