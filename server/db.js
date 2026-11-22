@@ -28,14 +28,11 @@ db.serialize(() => {
             console.error('Error creating workspaces table', err.message);
         } else {
             console.log('Workspaces table ready.');
-            // Seed a default workspace for existing features if none exists
-            db.get("SELECT COUNT(*) as count FROM workspaces", (err, row) => {
-                if (!err && row.count === 0) {
-                    db.run("INSERT INTO workspaces (name, plan) VALUES ('Default Startup', 'free')");
-                }
-            });
         }
     });
+    // Features default to workspace_id 1 (FK). Queued here, not from the callback above, so it runs
+    // before any request issued after start-up.
+    db.run("INSERT OR IGNORE INTO workspaces (id, name, plan) VALUES (1, 'Default Startup', 'free')");
 
     // Features Table
     db.run(`CREATE TABLE IF NOT EXISTS features (
