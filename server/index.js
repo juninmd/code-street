@@ -534,11 +534,38 @@ app.post('/api/features/:id/pledge', async (req, res) => {
   }
 });
 
-// Get all payouts
-app.get('/api/admin/payouts', async (req, res) => {
+// List payouts, newest first. Every ETF buy adds a row, so the list is paged by (created_at, id).
+const PAYOUTS_DEFAULT_LIMIT = 50;
+const PAYOUTS_MAX_LIMIT = 100;
+const encodeCursor = (row) => Buffer.from(JSON.stringify([row.created_at, row.id])).toString('base64url');
+const decodeCursor = (raw) => {
     try {
-        const rows = await dbAll('SELECT * FROM payouts ORDER BY created_at DESC, id DESC');
-        res.json({ data: rows });
+        const [createdAt, id] = JSON.parse(Buffer.from(String(raw), 'base64url').toString('utf8'));
+        return typeof createdAt === 'string' && Number.isInteger(id) ? { createdAt, id } : null;
+    } catch {
+        return null;
+    }
+};
+
+app.get('/api/admin/payouts', async (req, res) => {
+    const limit = req.query.limit === undefined ? PAYOUTS_DEFAULT_LIMIT : Number(req.query.limit);
+    if (!Number.isInteger(limit) || limit < 1) {
+        return res.status(400).json({ error: 'limit must be a positive integer' });
+    }
+    const cursor = req.query.cursor === undefined ? null : decodeCursor(req.query.cursor);
+    if (req.query.cursor !== undefined && !cursor) {
+        return res.status(400).json({ error: 'Invalid cursor' });
+    }
+    const pageSize = Math.min(limit, PAYOUTS_MAX_LIMIT);
+
+    try {
+        const where = cursor ? 'WHERE created_at < ? OR (created_at = ? AND id < ?)' : '';
+        const params = cursor ? [cursor.createdAt, cursor.createdAt, cursor.id] : [];
+        // One extra row tells whether another page exists.
+        const rows = await dbAll(`SELECT * FROM payouts ${where} ORDER BY created_at DESC, id DESC LIMIT ?`, [...params, pageSize + 1]);
+        const page = rows.slice(0, pageSize);
+        const next_cursor = rows.length > pageSize ? encodeCursor(page[page.length - 1]) : null;
+        res.json({ data: page, next_cursor });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
