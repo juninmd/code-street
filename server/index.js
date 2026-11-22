@@ -5,6 +5,7 @@ const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, ge
 const cors = require('cors');
 const db = require('./db');
 const { createDbAccess } = require('./dbAccess');
+const { requireAdmin } = require('./adminAuth');
 const Stripe = require('stripe');
 
 // Initialize Stripe with a test key (in a real app, this would be an environment variable)
@@ -384,7 +385,7 @@ app.get('/api/stats', async (req, res) => {
 // --- Workspaces API ---
 
 // Get all workspaces
-app.get('/api/admin/workspaces', async (req, res) => {
+app.get('/api/admin/workspaces', requireAdmin, async (req, res) => {
     try {
         const rows = await dbAll('SELECT * FROM workspaces ORDER BY created_at DESC');
         res.json({ data: rows });
@@ -394,7 +395,7 @@ app.get('/api/admin/workspaces', async (req, res) => {
 });
 
 // Create a workspace
-app.post('/api/admin/workspaces', async (req, res) => {
+app.post('/api/admin/workspaces', requireAdmin, async (req, res) => {
     const { name, plan } = req.body;
     if (!name) return res.status(400).json({ error: 'Workspace name is required' });
 
@@ -411,7 +412,7 @@ app.post('/api/admin/workspaces', async (req, res) => {
 });
 
 // Update workspace plan
-app.put('/api/admin/workspaces/:id/plan', async (req, res) => {
+app.put('/api/admin/workspaces/:id/plan', requireAdmin, async (req, res) => {
     const { id } = req.params;
     const { plan } = req.body;
 
@@ -445,7 +446,7 @@ app.post('/api/market/pro-subscription', async (req, res) => {
 });
 
 // Market Crash Simulation (The "Surprise")
-app.post('/api/market/crash', async (req, res) => {
+app.post('/api/market/crash', requireAdmin, async (req, res) => {
     const CRASH_PERCENT = 0.20;
     try {
         const features = await dbAll('SELECT id, pledged_amount FROM features WHERE pledged_amount > 0');
@@ -554,7 +555,7 @@ const decodeCursor = (raw) => {
     }
 };
 
-app.get('/api/admin/payouts', async (req, res) => {
+app.get('/api/admin/payouts', requireAdmin, async (req, res) => {
     const limit = req.query.limit === undefined ? PAYOUTS_DEFAULT_LIMIT : Number(req.query.limit);
     if (!Number.isInteger(limit) || limit < 1) {
         return res.status(400).json({ error: 'limit must be a positive integer' });
@@ -579,7 +580,7 @@ app.get('/api/admin/payouts', async (req, res) => {
 });
 
 // Process a payout
-app.post('/api/admin/payout', async (req, res) => {
+app.post('/api/admin/payout', requireAdmin, async (req, res) => {
     const { amount } = req.body;
     if (!isPositiveAmount(amount)) {
         res.status(400).json({ error: 'Valid amount is required' });
@@ -596,7 +597,7 @@ app.post('/api/admin/payout', async (req, res) => {
 });
 
 // Distribute Dividends (Admin)
-app.post('/api/market/dividends', async (req, res) => {
+app.post('/api/market/dividends', requireAdmin, async (req, res) => {
     const { amount_per_share } = req.body;
     if (!amount_per_share || isNaN(amount_per_share) || amount_per_share <= 0) {
         res.status(400).json({ error: 'Valid amount per share is required' });
@@ -713,7 +714,7 @@ app.get('/api/features/:id/candlesticks', async (req, res) => {
 });
 
 // Update status (Admin)
-app.patch('/api/features/:id/status', async (req, res) => {
+app.patch('/api/features/:id/status', requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 

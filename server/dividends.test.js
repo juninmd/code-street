@@ -1,4 +1,6 @@
 const request = require('supertest');
+process.env.ADMIN_TOKEN = 'test-admin-token';
+const AUTH = { Authorization: 'Bearer test-admin-token' };
 const app = require('./index');
 const db = require('./db');
 
@@ -18,7 +20,7 @@ describe('Dividends API', () => {
 
     it('should allow admin to distribute dividends', async () => {
         const res = await request(app)
-            .post('/api/market/dividends')
+            .post('/api/market/dividends').set(AUTH)
             .send({ amount_per_share: 0.50 });
 
         expect(res.statusCode).toBe(200);
@@ -28,7 +30,7 @@ describe('Dividends API', () => {
 
     it('should fail with invalid amount', async () => {
         const res = await request(app)
-            .post('/api/market/dividends')
+            .post('/api/market/dividends').set(AUTH)
             .send({ amount_per_share: -10 });
 
         expect(res.statusCode).toBe(400);

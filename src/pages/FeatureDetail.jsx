@@ -13,6 +13,7 @@ import { Terminal } from 'lucide-react';
 import { addToPortfolio } from '../utils/portfolio';
 import { triggerHaptic } from '../utils/haptics';
 import { addXP } from '../utils/leveling';
+import { adminFetch } from '../utils/adminFetch';
 
 const ORDER_FAILED = '⚠️ Order not filled. Try again.';
 
@@ -100,15 +101,19 @@ const FeatureDetail = () => {
   };
 
   const handleStatusChange = async (newStatus) => {
+      const previous = feature?.status;
       setFeature(prev => ({ ...prev, status: newStatus }));
       try {
-          await fetch(`/api/features/${id}/status`, {
+          const res = await adminFetch(`/api/features/${id}/status`, {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ status: newStatus })
           });
+          // Status é ação de admin: sem token válido o servidor recusa e a tela volta ao valor real.
+          if (!res.ok) setFeature(prev => ({ ...prev, status: previous }));
       } catch(err) {
           console.error(err);
+          setFeature(prev => ({ ...prev, status: previous }));
       }
   }
 
