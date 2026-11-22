@@ -203,10 +203,17 @@ app.get('/api/features', async (req, res) => {
         dbAll('SELECT feature_id, amount, created_at FROM pledges ORDER BY created_at DESC LIMIT 1000')
     ]);
 
+    // Group once instead of scanning all recent pledges for every feature (was O(features x pledges))
+    const pledgesByFeature = new Map();
+    for (const p of recentPledges) {
+        const list = pledgesByFeature.get(p.feature_id);
+        if (list) list.push(p);
+        else pledgesByFeature.set(p.feature_id, [p]);
+    }
+
     const data = rows.map(row => {
         // Get recent pledges for this feature to build a sparkline
-        let deltas = recentPledges
-            .filter(p => p.feature_id === row.id)
+        let deltas = (pledgesByFeature.get(row.id) || [])
             .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
             .map(p => p.amount);
 
