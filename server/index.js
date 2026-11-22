@@ -4,7 +4,7 @@ const { generateHackerLeak, generateBusinessIdea, generateExecutionBlueprint, ge
 
 const cors = require('cors');
 const db = require('./db');
-const util = require('util');
+const { createDbAccess } = require('./dbAccess');
 const Stripe = require('stripe');
 
 // Initialize Stripe with a test key (in a real app, this would be an environment variable)
@@ -35,20 +35,7 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // Global variable to track the latest IPO timestamp
 let latestIPOTimestamp = Date.now();
 
-// Promisify DB methods
-const dbGet = util.promisify(db.get).bind(db);
-const dbAll = util.promisify(db.all).bind(db);
-const dbRun = (sql, params = []) => {
-    return new Promise((resolve, reject) => {
-        db.run(sql, params, function (err) {
-            if (err) {
-                reject(err);
-            } else {
-                resolve({ lastID: this.lastID, changes: this.changes });
-            }
-        });
-    });
-};
+const { dbGet, dbAll, dbRun, withTransaction } = createDbAccess(db);
 
 
 // Positive finite number check; rejects NaN, Infinity, booleans and non-numeric strings like "abc".
@@ -145,40 +132,37 @@ app.post('/api/etfs/buy', async (req, res) => {
 
         // If no features exist for this ETF category, we simulate abstract volume (stored at platform level, or we simply record fees)
         // Let's see if there are any features, otherwise we just record the transaction without features
-        const features = await dbAll('SELECT id FROM features WHERE category = ? AND status != "rejected" AND status != "completed"', [category]);
-
-        await dbRun('BEGIN TRANSACTION');
-
         const amountAfterFee = is_dark_pool ? amount * 0.85 : amount * 0.95;
         const feeAmount = is_dark_pool ? amount * 0.15 : amount * 0.05;
 
-        if (features.length > 0) {
-            // Distribute amount equally
-            const splitAmount = amountAfterFee / features.length;
-            for (const feature of features) {
-                await dbRun('UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?', [splitAmount, feature.id]);
+        await withTransaction(async (tx) => {
+            const features = await tx.all('SELECT id FROM features WHERE category = ? AND status != "rejected" AND status != "completed"', [category]);
 
-                await dbRun(
-                    'INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)',
-                    [feature.id, splitAmount, is_dark_pool ? 1 : 0]
-                );
+            if (features.length > 0) {
+                // Distribute amount equally
+                const splitAmount = amountAfterFee / features.length;
+                for (const feature of features) {
+                    await tx.run('UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?', [splitAmount, feature.id]);
+
+                    await tx.run(
+                        'INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)',
+                        [feature.id, splitAmount, is_dark_pool ? 1 : 0]
+                    );
+                }
+            } else {
+                 // If no features yet, we can't tie pledges to features. Just record the fee
+                 // Optional: Create a dummy feature to hold volume for empty ETFs
             }
-        } else {
-             // If no features yet, we can't tie pledges to features. Just record the fee
-             // Optional: Create a dummy feature to hold volume for empty ETFs
-        }
 
-        // Record platform fee
-        await dbRun(
-            'INSERT INTO payouts (amount) VALUES (?)',
-            [feeAmount]
-        );
+            // Record platform fee
+            await tx.run(
+                'INSERT INTO payouts (amount) VALUES (?)',
+                [feeAmount]
+            );
+        });
 
-        await dbRun('COMMIT');
         res.json({ success: true, message: `Successfully invested ${amount} in ${etfData.name}.` });
     } catch (err) {
-        // BEGIN may not have run yet (e.g. ETF lookup failed); don't let ROLLBACK mask the 500
-        await dbRun('ROLLBACK').catch((err) => console.error('ROLLBACK failed', err));
         res.status(500).json({ error: err.message });
     }
 });
@@ -318,23 +302,20 @@ app.post('/api/features/:id/short', async (req, res) => {
   const sqlPledge = 'INSERT INTO pledges (feature_id, amount, is_short, is_dark_pool) VALUES (?, ?, 1, ?)';
 
   try {
-    await dbRun('BEGIN TRANSACTION');
-    // 1. Update the short amount
-    const { changes } = await dbRun(sqlFeature, [amount, id]);
+    const changes = await withTransaction(async (tx) => {
+      // 1. Update the short amount
+      const { changes: updated } = await tx.run(sqlFeature, [amount, id]);
+      // 2. Record the short transaction (nothing to record for an unknown feature)
+      if (updated > 0) await tx.run(sqlPledge, [id, amount, is_dark_pool ? 1 : 0]);
+      return updated;
+    });
 
     if (changes === 0) {
-        await dbRun('ROLLBACK');
         res.status(404).json({ error: 'Feature not found' });
         return;
     }
-
-    // 2. Record the short transaction
-    await dbRun(sqlPledge, [id, amount, is_dark_pool ? 1 : 0]);
-
-    await dbRun('COMMIT');
     res.json({ message: 'Shorted', changes });
   } catch (err) {
-    await dbRun('ROLLBACK');
     res.status(400).json({ error: err.message });
   }
 });
@@ -540,27 +521,22 @@ app.post('/api/features/:id/pledge', async (req, res) => {
   const sqlFeature = 'UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?';
   const sqlPledge = 'INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)';
 
-  let began = false;
   try {
     // Total and pledge record change together, as in /short.
-    await dbRun('BEGIN TRANSACTION');
-    began = true;
-    // 1. Update the total amount first so an unknown feature is a 404 (not an FK error)
-    const { changes } = await dbRun(sqlFeature, [amount, id]);
+    const changes = await withTransaction(async (tx) => {
+      // 1. Update the total amount first so an unknown feature is a 404 (not an FK error)
+      const { changes: updated } = await tx.run(sqlFeature, [amount, id]);
+      // 2. Record the pledge transaction
+      if (updated > 0) await tx.run(sqlPledge, [id, amount, is_dark_pool ? 1 : 0]);
+      return updated;
+    });
 
     if (changes === 0) {
-        await dbRun('ROLLBACK');
         res.status(404).json({ error: 'Feature not found' });
         return;
     }
-
-    // 2. Record the pledge transaction
-    await dbRun(sqlPledge, [id, amount, is_dark_pool ? 1 : 0]);
-    await dbRun('COMMIT');
     res.json({ message: 'Pledged', changes });
   } catch (err) {
-    // Never roll back a transaction this request did not open.
-    if (began) await dbRun('ROLLBACK').catch(() => {});
     res.status(400).json({ error: err.message });
   }
 });
@@ -973,40 +949,38 @@ app.post('/api/market/quantum-trade', async (req, res) => {
         let totalReturn = 0;
         const trades = [];
 
-        await dbRun('BEGIN TRANSACTION');
+        await withTransaction(async (tx) => {
+            for (let i = 0; i < numTrades; i++) {
+                const feature = features[Math.floor(Math.random() * features.length)];
+                const tradeType = Math.random() > 0.5 ? 'long' : 'short';
+                const tradeAmount = activeInvestment / numTrades;
 
-        for (let i = 0; i < numTrades; i++) {
-            const feature = features[Math.floor(Math.random() * features.length)];
-            const tradeType = Math.random() > 0.5 ? 'long' : 'short';
-            const tradeAmount = activeInvestment / numTrades;
+                // Artificial "Quantum AI" success probability (e.g., 60% chance to win on each micro-trade)
+                const isWin = Math.random() > 0.4;
+                const multiplier = isWin ? (1.1 + Math.random() * 0.4) : (0.5 + Math.random() * 0.4); // Win 10-50%, Lose 10-50%
+                const tradeResult = Math.round((tradeAmount * multiplier) * 100) / 100;
 
-            // Artificial "Quantum AI" success probability (e.g., 60% chance to win on each micro-trade)
-            const isWin = Math.random() > 0.4;
-            const multiplier = isWin ? (1.1 + Math.random() * 0.4) : (0.5 + Math.random() * 0.4); // Win 10-50%, Lose 10-50%
-            const tradeResult = Math.round((tradeAmount * multiplier) * 100) / 100;
+                totalReturn += tradeResult;
 
-            totalReturn += tradeResult;
+                trades.push({
+                    feature_title: feature.title,
+                    type: tradeType,
+                    invested: Math.round(tradeAmount * 100) / 100,
+                    result: tradeResult,
+                    profit: Math.round((tradeResult - tradeAmount) * 100) / 100
+                });
 
-            trades.push({
-                feature_title: feature.title,
-                type: tradeType,
-                invested: Math.round(tradeAmount * 100) / 100,
-                result: tradeResult,
-                profit: Math.round((tradeResult - tradeAmount) * 100) / 100
-            });
-
-            // Impact the market slightly
-            const marketImpact = tradeAmount * 0.1; // 10% of trade hits the actual market
-            if (tradeType === 'long') {
-                await dbRun('UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?', [marketImpact, feature.id]);
-                await dbRun('INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)', [feature.id, marketImpact, 1]);
-            } else {
-                await dbRun('UPDATE features SET short_amount = COALESCE(short_amount, 0) + ? WHERE id = ?', [marketImpact, feature.id]);
-                await dbRun('INSERT INTO pledges (feature_id, amount, is_short, is_dark_pool) VALUES (?, ?, ?, ?)', [feature.id, marketImpact, 1, 1]);
+                // Impact the market slightly
+                const marketImpact = tradeAmount * 0.1; // 10% of trade hits the actual market
+                if (tradeType === 'long') {
+                    await tx.run('UPDATE features SET pledged_amount = pledged_amount + ? WHERE id = ?', [marketImpact, feature.id]);
+                    await tx.run('INSERT INTO pledges (feature_id, amount, is_dark_pool) VALUES (?, ?, ?)', [feature.id, marketImpact, 1]);
+                } else {
+                    await tx.run('UPDATE features SET short_amount = COALESCE(short_amount, 0) + ? WHERE id = ?', [marketImpact, feature.id]);
+                    await tx.run('INSERT INTO pledges (feature_id, amount, is_short, is_dark_pool) VALUES (?, ?, ?, ?)', [feature.id, marketImpact, 1, 1]);
+                }
             }
-        }
-
-        await dbRun('COMMIT');
+        });
 
         const netProfit = totalReturn - investment; // Net profit compared to original investment
 
@@ -1020,7 +994,6 @@ app.post('/api/market/quantum-trade', async (req, res) => {
         });
 
     } catch (err) {
-        await dbRun('ROLLBACK');
         res.status(500).json({ error: err.message });
     }
 });
