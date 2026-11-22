@@ -56,6 +56,36 @@ describe('Payout API Endpoints', () => {
       expect(res.body.data.length).toBe(2);
       // Ordered by DESC created_at usually, so 200 first
       expect(res.body.data[0].amount).toBe(200);
+      expect(res.body.next_cursor).toBeNull();
+    });
+
+    it('pages through payouts with a capped limit and a cursor', async () => {
+      const insert = (amount) => new Promise((ok, ko) => db.run('INSERT INTO payouts (amount) VALUES (?)', [amount], (e) => (e ? ko(e) : ok())));
+      for (let i = 1; i <= 120; i++) await insert(i);
+
+      const first = await request(app).get('/api/admin/payouts');
+      expect(first.body.data.length).toBe(50);
+      expect(first.body.data[0].amount).toBe(120);
+
+      const capped = await request(app).get('/api/admin/payouts?limit=500');
+      expect(capped.body.data.length).toBe(100);
+
+      const seen = [];
+      let cursor;
+      do {
+        const url = `/api/admin/payouts?limit=50${cursor ? `&cursor=${cursor}` : ''}`;
+        const page = await request(app).get(url);
+        expect(page.statusCode).toBe(200);
+        seen.push(...page.body.data.map((p) => p.amount));
+        cursor = page.body.next_cursor;
+      } while (cursor);
+      expect(seen).toEqual(Array.from({ length: 120 }, (_, i) => 120 - i));
+    });
+
+    it('rejects an invalid limit or cursor', async () => {
+      expect((await request(app).get('/api/admin/payouts?limit=0')).statusCode).toBe(400);
+      expect((await request(app).get('/api/admin/payouts?limit=abc')).statusCode).toBe(400);
+      expect((await request(app).get('/api/admin/payouts?cursor=nope')).statusCode).toBe(400);
     });
   });
 
