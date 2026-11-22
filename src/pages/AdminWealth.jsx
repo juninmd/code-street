@@ -3,6 +3,7 @@ import { DollarSign, Activity, Building, PieChart, ArrowUpRight, TrendingUp, Zap
 import confetti from 'canvas-confetti';
 import { format } from 'date-fns';
 import { triggerHaptic } from '../utils/haptics';
+import { adminFetch } from '../utils/adminFetch';
 
 const AdminWealth = () => {
   const [stats, setStats] = useState(null);
@@ -27,8 +28,8 @@ const AdminWealth = () => {
           fetch('/api/stats'),
           fetch('/api/pledges/recent'),
           fetch('/api/features'),
-          fetch('/api/admin/payouts'),
-          fetch('/api/admin/workspaces')
+          adminFetch('/api/admin/payouts'),
+          adminFetch('/api/admin/workspaces')
       ]);
       const statsJson = await statsRes.json();
       const pledgesJson = await pledgesRes.json();
@@ -53,7 +54,7 @@ const AdminWealth = () => {
     if (!newWorkspaceName) return;
 
     try {
-      const res = await fetch('/api/admin/workspaces', {
+      const res = await adminFetch('/api/admin/workspaces', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newWorkspaceName, plan: newWorkspacePlan })
@@ -71,7 +72,7 @@ const AdminWealth = () => {
 
   const handleUpdatePlan = async (id, newPlan) => {
     try {
-      const res = await fetch(`/api/admin/workspaces/${id}/plan`, {
+      const res = await adminFetch(`/api/admin/workspaces/${id}/plan`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: newPlan })
@@ -160,7 +161,7 @@ const AdminWealth = () => {
       if (!window.confirm("WARNING: This will erase 20% of all market value. Are you sure?")) return;
 
       try {
-          const res = await fetch('/api/market/crash', { method: 'POST' });
+          const res = await adminFetch('/api/market/crash', { method: 'POST' });
           const json = await res.json();
           if (res.ok) {
                setMarketAction({
@@ -183,7 +184,7 @@ const AdminWealth = () => {
     setProcessing(true);
     triggerHaptic('notification');
     try {
-        const res = await fetch('/api/admin/payout', {
+        const res = await adminFetch('/api/admin/payout', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ amount })
@@ -218,7 +219,7 @@ const AdminWealth = () => {
 
       triggerHaptic('success');
       try {
-          const res = await fetch('/api/market/dividends', {
+          const res = await adminFetch('/api/market/dividends', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ amount_per_share: val })

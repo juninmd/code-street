@@ -90,6 +90,12 @@ Para rodar tanto o frontend quanto o backend simultaneamente em modo watch:
     ```
     O servidor estará ouvindo na porta `3000`.
 
+    As rotas de administrador (`/api/admin/*`, `POST /api/market/crash`, `POST /api/market/dividends` e `PATCH /api/features/:id/status`) exigem `Authorization: Bearer <ADMIN_TOKEN>`. Sem `ADMIN_TOKEN` definido elas respondem 503 (nunca ficam abertas):
+    ```bash
+    ADMIN_TOKEN="$(openssl rand -hex 32)" pnpm server
+    ```
+    O painel de admin pede esse token na primeira chamada recusada e o guarda só na sessão do navegador.
+
 2.  **Iniciar o Frontend (Vite):**
     ```bash
     pnpm dev

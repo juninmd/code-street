@@ -1,4 +1,6 @@
 const request = require('supertest');
+process.env.ADMIN_TOKEN = 'test-admin-token';
+const AUTH = { Authorization: 'Bearer test-admin-token' };
 const app = require('../index');
 const db = require('../db');
 
@@ -26,7 +28,7 @@ describe('Payout API Endpoints', () => {
   describe('POST /api/admin/payout', () => {
     it('should create a payout record', async () => {
       const res = await request(app)
-        .post('/api/admin/payout')
+        .post('/api/admin/payout').set(AUTH)
         .send({ amount: 500 });
 
       expect(res.statusCode).toEqual(200);
@@ -35,23 +37,23 @@ describe('Payout API Endpoints', () => {
     });
 
     it('should reject invalid amounts', async () => {
-      const resZero = await request(app).post('/api/admin/payout').send({ amount: 0 });
+      const resZero = await request(app).post('/api/admin/payout').set(AUTH).send({ amount: 0 });
       expect(resZero.statusCode).toEqual(400);
 
-      const resNeg = await request(app).post('/api/admin/payout').send({ amount: -10 });
+      const resNeg = await request(app).post('/api/admin/payout').set(AUTH).send({ amount: -10 });
       expect(resNeg.statusCode).toEqual(400);
 
-      const resString = await request(app).post('/api/admin/payout').send({ amount: 'abc' });
+      const resString = await request(app).post('/api/admin/payout').set(AUTH).send({ amount: 'abc' });
       expect(resString.statusCode).toEqual(400);
     });
   });
 
   describe('GET /api/admin/payouts', () => {
     it('should return list of payouts', async () => {
-      await request(app).post('/api/admin/payout').send({ amount: 100 });
-      await request(app).post('/api/admin/payout').send({ amount: 200 });
+      await request(app).post('/api/admin/payout').set(AUTH).send({ amount: 100 });
+      await request(app).post('/api/admin/payout').set(AUTH).send({ amount: 200 });
 
-      const res = await request(app).get('/api/admin/payouts');
+      const res = await request(app).get('/api/admin/payouts').set(AUTH);
       expect(res.statusCode).toEqual(200);
       expect(res.body.data.length).toBe(2);
       // Ordered by DESC created_at usually, so 200 first
@@ -63,18 +65,18 @@ describe('Payout API Endpoints', () => {
       const insert = (amount) => new Promise((ok, ko) => db.run('INSERT INTO payouts (amount) VALUES (?)', [amount], (e) => (e ? ko(e) : ok())));
       for (let i = 1; i <= 120; i++) await insert(i);
 
-      const first = await request(app).get('/api/admin/payouts');
+      const first = await request(app).get('/api/admin/payouts').set(AUTH);
       expect(first.body.data.length).toBe(50);
       expect(first.body.data[0].amount).toBe(120);
 
-      const capped = await request(app).get('/api/admin/payouts?limit=500');
+      const capped = await request(app).get('/api/admin/payouts?limit=500').set(AUTH);
       expect(capped.body.data.length).toBe(100);
 
       const seen = [];
       let cursor;
       do {
         const url = `/api/admin/payouts?limit=50${cursor ? `&cursor=${cursor}` : ''}`;
-        const page = await request(app).get(url);
+        const page = await request(app).get(url).set(AUTH);
         expect(page.statusCode).toBe(200);
         seen.push(...page.body.data.map((p) => p.amount));
         cursor = page.body.next_cursor;
@@ -83,9 +85,9 @@ describe('Payout API Endpoints', () => {
     });
 
     it('rejects an invalid limit or cursor', async () => {
-      expect((await request(app).get('/api/admin/payouts?limit=0')).statusCode).toBe(400);
-      expect((await request(app).get('/api/admin/payouts?limit=abc')).statusCode).toBe(400);
-      expect((await request(app).get('/api/admin/payouts?cursor=nope')).statusCode).toBe(400);
+      expect((await request(app).get('/api/admin/payouts?limit=0').set(AUTH)).statusCode).toBe(400);
+      expect((await request(app).get('/api/admin/payouts?limit=abc').set(AUTH)).statusCode).toBe(400);
+      expect((await request(app).get('/api/admin/payouts?cursor=nope').set(AUTH)).statusCode).toBe(400);
     });
   });
 
@@ -106,7 +108,7 @@ describe('Payout API Endpoints', () => {
           expect(res1.body.available_balance).toBe(50);
 
           // 2. Make Withdrawal
-          await request(app).post('/api/admin/payout').send({ amount: 30 });
+          await request(app).post('/api/admin/payout').set(AUTH).send({ amount: 30 });
 
           // Check Updated Stats (Revenue = 50, Withdrawn = 30, Balance = 20)
           const res2 = await request(app).get('/api/stats');
